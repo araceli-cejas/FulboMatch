@@ -24,32 +24,36 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
-import com.matchball.fulbomatch.ui.theme.GreenSecondary
 import com.matchball.fulbomatch.ui.theme.White
 import kotlinx.coroutines.launch
 
 data class OnboardingPage(
     val title: String,
     val description: String,
+    val imageRes: Int,
     val imageDescription: String
 )
 
 @Composable
 fun OnboardingScreen(onStartClick: () -> Unit) {
+
     val pages = listOf(
         OnboardingPage(
             title = "Encontrá tu próximo partido",
             description = "Explorá el mapa interactivo y sumate a partidos cerca de tu ubicación. Nunca te quedes sin jugar.",
+            imageRes = R.drawable.pelota1,
             imageDescription = "Jugadores en una cancha de fútbol"
         ),
         OnboardingPage(
             title = "Armá tu equipo",
             description = "Creá partidos, invitá a tus amigos y organizá encuentros en segundos. El fútbol amateur nunca fue tan fácil de gestionar.",
+            imageRes = R.drawable.equipo,
             imageDescription = "Equipo de fútbol reunido"
         ),
         OnboardingPage(
             title = "Sumate a la comunidad",
             description = "Encontrá jugadores de tu nivel, hacé amigos y disfrutá de la pasión del fútbol. El partido ideal te está esperando.",
+            imageRes = R.drawable.comunidad,
             imageDescription = "Comunidad de jugadores"
         )
     )
@@ -66,12 +70,14 @@ fun OnboardingScreen(onStartClick: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         // Logo
-        Text(
-            text = "fulbomatch",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = GreenPrimary,
-            modifier = Modifier.padding(top = 16.dp)
+        Image(
+            painter = painterResource(id = R.drawable.logo_completo),
+            contentDescription = "Logo FulboMatch",
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .height(48.dp)
+                .wrapContentWidth(),
+            contentScale = ContentScale.Fit
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -80,15 +86,18 @@ fun OnboardingScreen(onStartClick: () -> Unit) {
         HorizontalPager(
             state = pagerState,
             modifier = Modifier.weight(1f)
-        ) { page ->
-            OnboardingPageContent(pages[page])
+        ) { pageIndex ->
+            OnboardingPageContent(page = pages[pageIndex])
         }
 
-        // Indicadores de página (dots)
+        // Dots indicadores
         Row(
             modifier = Modifier
                 .padding(vertical = 16.dp)
-                .semantics { contentDescription = "Página ${pagerState.currentPage + 1} de ${pages.size}" },
+                .semantics {
+                    contentDescription =
+                        "Página ${pagerState.currentPage + 1} de ${pages.size}"
+                },
             horizontalArrangement = Arrangement.Center
         ) {
             repeat(pages.size) { index ->
@@ -107,7 +116,7 @@ fun OnboardingScreen(onStartClick: () -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Botón
+        // Botón Siguiente / Empezar
         Button(
             onClick = {
                 if (pagerState.currentPage < pages.size - 1) {
@@ -142,20 +151,16 @@ private fun OnboardingPageContent(page: OnboardingPage) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Placeholder de imagen
-        Box(
+        // Imagen real
+        Image(
+            painter = painterResource(id = page.imageRes),
+            contentDescription = page.imageDescription,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(220.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(GreenSecondary.copy(alpha = 0.15f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "⚽",
-                fontSize = 64.sp
-            )
-        }
+                .clip(RoundedCornerShape(16.dp)),
+            contentScale = ContentScale.Crop
+        )
 
         Spacer(modifier = Modifier.height(32.dp))
 
