@@ -10,11 +10,14 @@ import com.matchball.fulbomatch.ui.screens.CreateMatchScreen
 import com.matchball.fulbomatch.ui.screens.HomeScreen
 import com.matchball.fulbomatch.ui.screens.LoginScreen
 import com.matchball.fulbomatch.ui.screens.MatchDetailScreen
+import com.matchball.fulbomatch.ui.screens.MatchesScreen
 import com.matchball.fulbomatch.ui.screens.OnboardingScreen
 import com.matchball.fulbomatch.ui.screens.ProfileScreen
 import com.matchball.fulbomatch.ui.screens.RegisterScreen
 import com.matchball.fulbomatch.ui.screens.RequestsScreen
 import com.matchball.fulbomatch.ui.screens.RecuperarContraseñaScreen
+import com.matchball.fulbomatch.ui.screens.EditProfileScreen
+
 @Composable
 fun NavGraph(navController: NavHostController) {
     NavHost(
@@ -41,7 +44,7 @@ fun NavGraph(navController: NavHostController) {
                 onRegisterClick = {
                     navController.navigate(Routes.Register.route)
                 },
-                onRecuperarClick = {  // ← NUEVA FUNCIÓN
+                onRecuperarClick = {
                     navController.navigate(Routes.RecuperarContraseña.route)
                 }
             )
@@ -62,9 +65,12 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Routes.RecuperarContraseña.route) {
             RecuperarContraseñaScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = {
+                    navController.popBackStack()
+                }
             )
         }
+
         composable(Routes.Home.route) {
             HomeScreen(
                 onMatchClick = { matchId ->
@@ -78,37 +84,117 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onRequestsClick = {
                     navController.navigate(Routes.Requests.route)
+                },
+                onMatchesClick = {
+                    navController.navigate(Routes.Matches.route)
+                }
+            )
+        }
+
+        composable(Routes.Matches.route) {
+            MatchesScreen(
+                onHomeClick = {
+                    navController.navigate(Routes.Home.route) {
+                        launchSingleTop = true
+                    }
+                },
+                onCreateMatchClick = {
+                    navController.navigate(Routes.CreateMatch.route)
+                },
+                onProfileClick = {
+                    navController.navigate(Routes.Profile.route)
+                },
+                onMatchClick = { matchId ->
+                    navController.navigate(Routes.MatchDetail.createRoute(matchId))
+                },
+                onExploreClick = {
+                    navController.navigate(Routes.Home.route)
+                },
+                onRequestsClick = {
+                    navController.navigate(Routes.Requests.route)
                 }
             )
         }
 
         composable(
             route = Routes.MatchDetail.route,
-            arguments = listOf(navArgument("matchId") { type = NavType.StringType })
+            arguments = listOf(
+                navArgument("matchId") {
+                    type = NavType.StringType
+                }
+            )
         ) { backStackEntry ->
             val matchId = backStackEntry.arguments?.getString("matchId") ?: ""
+
             MatchDetailScreen(
                 matchId = matchId,
-                onBackClick = { navController.popBackStack() }
+                onBackClick = {
+                    navController.popBackStack()
+                }
             )
         }
 
         composable(Routes.CreateMatch.route) {
             CreateMatchScreen(
-                onMatchCreated = { navController.popBackStack() },
-                onBackClick = { navController.popBackStack() }
+                onMatchCreated = {
+                    navController.popBackStack()
+                },
+                onBackClick = {
+                    navController.navigate(Routes.Home.route)
+                },
+                onProfileClick = {
+                    navController.navigate(Routes.Profile.route)
+                },
+                onMatchesClick = {
+                    navController.navigate(Routes.Matches.route)
+                }
             )
         }
 
         composable(Routes.Profile.route) {
             ProfileScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onHomeClick = {
+                    navController.navigate(Routes.Home.route)
+                },
+                onCreateMatchClick = {
+                    navController.navigate(Routes.CreateMatch.route)
+                },
+                onMatchesClick = {
+                    navController.navigate(Routes.Matches.route)
+                },
+                onEditProfileClick = {
+                    navController.navigate(Routes.EditProfile.route)
+                }
+            )
+        }
+        composable(Routes.EditProfile.route) {
+            EditProfileScreen(
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onSaveClick = {
+                    navController.popBackStack()
+                },
+                onHomeClick = {
+                    navController.navigate(Routes.Home.route)
+                },
+                onMatchesClick = {
+                    navController.navigate(Routes.Matches.route)
+                },
+                onCreateMatchClick = {
+                    navController.navigate(Routes.CreateMatch.route)
+                }
             )
         }
 
         composable(Routes.Requests.route) {
             RequestsScreen(
-                onBackClick = { navController.popBackStack() }
+                onBackClick = {
+                    navController.popBackStack()
+                }
             )
         }
     }

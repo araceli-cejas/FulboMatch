@@ -90,7 +90,8 @@ fun HomeScreen(
     onMatchClick: (String) -> Unit,
     onCreateMatchClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onRequestsClick: () -> Unit
+    onRequestsClick: () -> Unit,
+    onMatchesClick: () -> Unit
 ) {
     var searchText by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Todos") }
@@ -112,7 +113,8 @@ fun HomeScreen(
         bottomBar = {
             HomeBottomBar(
                 onCreateMatchClick = onCreateMatchClick,
-                onProfileClick = onProfileClick
+                onProfileClick = onProfileClick,
+                onMatchesClick = onMatchesClick
             )
         },
         containerColor = Color(0xFFF6F6F6)
@@ -539,7 +541,8 @@ private fun AvatarStack() {
 @Composable
 private fun HomeBottomBar(
     onCreateMatchClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onMatchesClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier
@@ -566,7 +569,7 @@ private fun HomeBottomBar(
             UnselectedBottomItem(
                 iconText = "⚽",
                 label = "Partidos",
-                onClick = { }
+                onClick = onMatchesClick
             )
 
             UnselectedBottomItem(
