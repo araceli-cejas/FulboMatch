@@ -1,21 +1,46 @@
 package com.matchball.fulbomatch.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,8 +55,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Groups
+
+private enum class MatchFilter(val label: String) {
+    TODOS("Todos"),
+    ME_SUME("Me sumé"),
+    ORGANIZO("Organizo")
+}
 
 data class UserMatch(
     val id: String,
@@ -41,7 +70,9 @@ data class UserMatch(
     val month: String,
     val time: String,
     val players: String,
-    val status: String
+    val status: String,
+    val isUserJoined: Boolean,
+    val isOrganizer: Boolean
 )
 
 val userMatches = listOf(
@@ -53,7 +84,9 @@ val userMatches = listOf(
         month = "OCT",
         time = "20:00 hs",
         players = "10/10 jugadores",
-        status = "CONFIRMADO"
+        status = "CONFIRMADO",
+        isUserJoined = true,
+        isOrganizer = false
     ),
     UserMatch(
         id = "2",
@@ -63,7 +96,9 @@ val userMatches = listOf(
         month = "OCT",
         time = "18:30 hs",
         players = "12/14 jugadores",
-        status = "PENDIENTE"
+        status = "PENDIENTE",
+        isUserJoined = false,
+        isOrganizer = true
     )
 )
 
@@ -76,6 +111,7 @@ fun MatchesScreen(
     onRequestsClick: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf("Próximos") }
+    var selectedFilter by remember { mutableStateOf(MatchFilter.TODOS) }
 
     Scaffold(
         bottomBar = {
@@ -114,19 +150,34 @@ fun MatchesScreen(
                 onTabSelected = { selectedTab = it }
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (selectedTab == "Próximos") {
-                userMatches.forEach { match ->
-                    UserMatchCard(
-                        match = match,
-                        onClick = { onMatchClick(match.id) }
-                    )
+                MatchesFilterChips(
+                    selectedFilter = selectedFilter,
+                    onFilterSelected = { selectedFilter = it }
+                )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+
+                val visibleMatches = when (selectedFilter) {
+                    MatchFilter.TODOS -> userMatches
+                    MatchFilter.ME_SUME -> userMatches.filter { it.isUserJoined }
+                    MatchFilter.ORGANIZO -> userMatches.filter { it.isOrganizer }
                 }
 
+                if (visibleMatches.isEmpty()) {
+                    EmptyFilteredMatches(selectedFilter = selectedFilter)
+                } else {
+                    visibleMatches.forEach { match ->
+                        UserMatchCard(
+                            match = match,
+                            onClick = { onMatchClick(match.id) }
+                        )
 
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
             } else {
                 EmptyPastMatches()
             }
@@ -215,6 +266,128 @@ private fun MatchesTabs(
         HorizontalDivider(
             color = Color(0xFFE0E0E0),
             thickness = 1.dp
+        )
+    }
+}
+
+@Composable
+private fun MatchesFilterChips(
+    selectedFilter: MatchFilter,
+    onFilterSelected: (MatchFilter) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        MatchFilter.values().forEach { filter ->
+            MatchFilterChip(
+                filter = filter,
+                selected = selectedFilter == filter,
+                onClick = { onFilterSelected(filter) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun MatchFilterChip(
+    filter: MatchFilter,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        color = if (selected) Color(0xFFE2F8E9) else Color.White,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selected) Color(0xFFB9EFC8) else Color(0xFFE5E2E2)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            MatchFilterIcon(
+                filter = filter,
+                selected = selected
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Text(
+                text = filter.label,
+                fontSize = 14.sp,
+                fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+                color = if (selected) GreenPrimary else Color(0xFF444444)
+            )
+        }
+    }
+}
+
+@Composable
+private fun MatchFilterIcon(
+    filter: MatchFilter,
+    selected: Boolean
+) {
+    when (filter) {
+        MatchFilter.TODOS -> {
+            Box(
+                modifier = Modifier
+                    .size(18.dp)
+                    .clip(RoundedCornerShape(50.dp))
+                    .background(if (selected) GreenPrimary else Color.Transparent),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "✓",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (selected) Color.White else Color(0xFF4F574C)
+                )
+            }
+        }
+
+        MatchFilter.ME_SUME -> {
+            Icon(
+                imageVector = Icons.Default.Groups,
+                contentDescription = "Me sumé",
+                tint = if (selected) GreenPrimary else Color(0xFF4F574C),
+                modifier = Modifier.size(18.dp)
+            )
+        }
+
+        MatchFilter.ORGANIZO -> {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Organizo",
+                tint = if (selected) GreenPrimary else Color(0xFF4F574C),
+                modifier = Modifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyFilteredMatches(
+    selectedFilter: MatchFilter
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = when (selectedFilter) {
+                MatchFilter.TODOS -> "Todavía no tenés partidos próximos."
+                MatchFilter.ME_SUME -> "Todavía no te sumaste a ningún partido."
+                MatchFilter.ORGANIZO -> "Todavía no organizaste ningún partido."
+            },
+            fontSize = 15.sp,
+            color = Color(0xFF8A8A8A)
         )
     }
 }
