@@ -7,10 +7,16 @@ sealed class Routes(val route: String) {
 
     object RecuperarContraseña : Routes("recuperar_contraseña")
     object Home : Routes("home")
+
     object MatchDetail : Routes("match_detail/{matchId}") {
         fun createRoute(matchId: String) = "match_detail/$matchId"
     }
+
     object CreateMatch : Routes("create_match")
+
+    object EditMatch : Routes("edit_match/{matchId}") {
+        fun createRoute(matchId: String) = "edit_match/$matchId"
+    }
 
     object Matches : Routes("matches")
     object Profile : Routes("profile")

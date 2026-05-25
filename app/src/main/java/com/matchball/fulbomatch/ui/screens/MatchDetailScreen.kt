@@ -1,5 +1,6 @@
 package com.matchball.fulbomatch.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +36,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,12 +54,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.material3.OutlinedButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +67,9 @@ fun MatchDetailScreen(
     onBackClick: () -> Unit,
     onJoinClick: () -> Unit = {},
     onLeaveClick: () -> Unit = {},
-    isUserJoined: Boolean = false
+    onEditMatchClick: (String) -> Unit = {},
+    isUserJoined: Boolean = false,
+    isOrganizer: Boolean = false
 ) {
     val match = mockMatches.find { it.id == matchId }
 
@@ -116,8 +119,12 @@ fun MatchDetailScreen(
             if (match != null) {
                 BottomMatchActionButton(
                     isUserJoined = isUserJoined,
+                    isOrganizer = isOrganizer,
                     onJoinClick = onJoinClick,
-                    onLeaveClick = onLeaveClick
+                    onLeaveClick = onLeaveClick,
+                    onEditClick = {
+                        onEditMatchClick(matchId)
+                    }
                 )
             }
         },
@@ -233,14 +240,21 @@ private fun MatchHeroCard(
                         }
                     }
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                    Text(
-                        text = "\$1500 / jug",
-                        color = GreenPrimary,
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
+                        Text(
+                            text = "\$1500 / jug",
+                            color = GreenPrimary,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.End,
+                            maxLines = 1
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(18.dp))
@@ -722,8 +736,10 @@ private fun DetailSectionCard(
 @Composable
 private fun BottomMatchActionButton(
     isUserJoined: Boolean,
+    isOrganizer: Boolean,
     onJoinClick: () -> Unit,
-    onLeaveClick: () -> Unit
+    onLeaveClick: () -> Unit,
+    onEditClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -741,7 +757,35 @@ private fun BottomMatchActionButton(
                 ),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (isUserJoined) {
+            if (isOrganizer) {
+                Button(
+                    onClick = onEditClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GreenPrimary,
+                        contentColor = White
+                    )
+                ) {
+                    Text(
+                        text = "Editar partido",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Solo el organizador puede modificar o cancelar este partido.",
+                    fontSize = 13.sp,
+                    color = Color(0xFF6F6F6F),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else if (isUserJoined) {
                 OutlinedButton(
                     onClick = onLeaveClick,
                     modifier = Modifier
@@ -765,7 +809,9 @@ private fun BottomMatchActionButton(
                 Text(
                     text = "Se liberará tu cupo y el organizador será notificado.",
                     fontSize = 13.sp,
-                    color = Color(0xFF6F6F6F)
+                    color = Color(0xFF6F6F6F),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
                 )
             } else {
                 Button(
