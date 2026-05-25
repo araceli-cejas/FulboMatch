@@ -107,9 +107,6 @@ fun NavGraph(navController: NavHostController) {
                 onMatchClick = { matchId ->
                     navController.navigate(Routes.MatchDetail.createRoute(matchId))
                 },
-                onExploreClick = {
-                    navController.navigate(Routes.Home.route)
-                },
                 onRequestsClick = {
                     navController.navigate(Routes.Requests.route)
                 }

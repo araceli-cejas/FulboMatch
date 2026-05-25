@@ -3,7 +3,19 @@ package com.matchball.fulbomatch.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,7 +27,19 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -724,7 +748,7 @@ private fun SurfaceGrassIcon(
 
         val centerGrass = Path().apply {
             moveTo(size.width * 0.50f, size.height * 0.78f)
-            quadraticBezierTo(
+            quadraticTo(
                 size.width * 0.46f,
                 size.height * 0.45f,
                 size.width * 0.34f,
@@ -743,7 +767,7 @@ private fun SurfaceGrassIcon(
 
         val leftGrass = Path().apply {
             moveTo(size.width * 0.36f, size.height * 0.78f)
-            quadraticBezierTo(
+            quadraticTo(
                 size.width * 0.26f,
                 size.height * 0.56f,
                 size.width * 0.14f,
@@ -762,7 +786,7 @@ private fun SurfaceGrassIcon(
 
         val rightGrass = Path().apply {
             moveTo(size.width * 0.62f, size.height * 0.78f)
-            quadraticBezierTo(
+            quadraticTo(
                 size.width * 0.72f,
                 size.height * 0.56f,
                 size.width * 0.86f,

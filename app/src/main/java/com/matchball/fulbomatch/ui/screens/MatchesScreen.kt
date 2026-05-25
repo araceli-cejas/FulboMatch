@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -31,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
-import com.matchball.fulbomatch.ui.theme.White
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Groups
 
@@ -75,7 +73,6 @@ fun MatchesScreen(
     onCreateMatchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onMatchClick: (String) -> Unit,
-    onExploreClick: () -> Unit,
     onRequestsClick: () -> Unit = {}
 ) {
     var selectedTab by remember { mutableStateOf("Próximos") }
@@ -129,33 +126,7 @@ fun MatchesScreen(
                     Spacer(modifier = Modifier.height(12.dp))
                 }
 
-                Text(
-                    text = "¿Buscas otro partido para este fin de semana?",
-                    fontSize = 14.sp,
-                    color = Color(0xFFC0C0C0),
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Button(
-                    onClick = onExploreClick,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .height(48.dp)
-                        .width(210.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GreenPrimary,
-                        contentColor = White
-                    )
-                ) {
-                    Text(
-                        text = "Explorar más partidos",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
             } else {
                 EmptyPastMatches()
             }
