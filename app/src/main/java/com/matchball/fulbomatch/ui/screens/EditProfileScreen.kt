@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenuItem
@@ -70,9 +71,11 @@ fun EditProfileScreen(
     onMatchesClick: () -> Unit = {},
     onCreateMatchClick: () -> Unit = {}
 ) {
-    var fullName by remember { mutableStateOf("Carlos Rodríguez") }
-    var email by remember { mutableStateOf("carlos.rod@ejemplo.com") }
+    var fullName by remember { mutableStateOf("Lucas Fernández") }
+    var email by remember { mutableStateOf("lucasfer@gmail.com") }
     var phone by remember { mutableStateOf("+34 600 123 456") }
+    var age by remember { mutableStateOf("24") }
+    var zone by remember { mutableStateOf("Caballito, CABA") }
     var position by remember { mutableStateOf("Mediocampista") }
     var description by remember {
         mutableStateOf("Jugador de equipo, me gusta distribuir el balón y mantener el ritmo en el centro del campo. Disponible los fines de semana.")
@@ -176,7 +179,59 @@ fun EditProfileScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 colors = profileTextFieldColors()
             )
+            Spacer(modifier = Modifier.height(18.dp))
 
+            FormLabel("Edad")
+
+            OutlinedTextField(
+                value = age,
+                onValueChange = { newValue ->
+                    if (newValue.length <= 2 && newValue.all { it.isDigit() }) {
+                        age = newValue
+                    }
+                },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Edad",
+                        tint = Color(0xFF465046),
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                placeholder = {
+                    Text(text = "Ej: 28")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = profileTextFieldColors()
+            )
+
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            FormLabel("Zona o barrio")
+
+            OutlinedTextField(
+                value = zone,
+                onValueChange = { zone = it },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Place,
+                        contentDescription = "Zona o barrio",
+                        tint = Color(0xFF465046),
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                placeholder = {
+                    Text(text = "Ej: Palermo, CABA")
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
+                singleLine = true,
+                colors = profileTextFieldColors()
+            )
             Spacer(modifier = Modifier.height(18.dp))
 
             FormLabel("Posición preferida")

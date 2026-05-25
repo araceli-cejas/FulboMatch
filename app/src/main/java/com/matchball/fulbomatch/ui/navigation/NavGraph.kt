@@ -7,16 +7,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.matchball.fulbomatch.ui.screens.CreateMatchScreen
+import com.matchball.fulbomatch.ui.screens.EditProfileScreen
 import com.matchball.fulbomatch.ui.screens.HomeScreen
 import com.matchball.fulbomatch.ui.screens.LoginScreen
 import com.matchball.fulbomatch.ui.screens.MatchDetailScreen
 import com.matchball.fulbomatch.ui.screens.MatchesScreen
 import com.matchball.fulbomatch.ui.screens.OnboardingScreen
 import com.matchball.fulbomatch.ui.screens.ProfileScreen
+import com.matchball.fulbomatch.ui.screens.RecuperarContraseñaScreen
 import com.matchball.fulbomatch.ui.screens.RegisterScreen
 import com.matchball.fulbomatch.ui.screens.RequestsScreen
-import com.matchball.fulbomatch.ui.screens.RecuperarContraseñaScreen
-import com.matchball.fulbomatch.ui.screens.EditProfileScreen
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -74,7 +74,7 @@ fun NavGraph(navController: NavHostController) {
         composable(Routes.Home.route) {
             HomeScreen(
                 onMatchClick = { matchId ->
-                    navController.navigate(Routes.MatchDetail.createRoute(matchId))
+                    navController.navigate("${Routes.MatchDetail.createRoute(matchId)}?isUserJoined=false")
                 },
                 onCreateMatchClick = {
                     navController.navigate(Routes.CreateMatch.route)
@@ -105,7 +105,7 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Routes.Profile.route)
                 },
                 onMatchClick = { matchId ->
-                    navController.navigate(Routes.MatchDetail.createRoute(matchId))
+                    navController.navigate("${Routes.MatchDetail.createRoute(matchId)}?isUserJoined=true")
                 },
                 onRequestsClick = {
                     navController.navigate(Routes.Requests.route)
@@ -114,19 +114,41 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = Routes.MatchDetail.route,
+            route = "${Routes.MatchDetail.route}?isUserJoined={isUserJoined}",
             arguments = listOf(
                 navArgument("matchId") {
                     type = NavType.StringType
+                },
+                navArgument("isUserJoined") {
+                    type = NavType.BoolType
+                    defaultValue = false
                 }
             )
         ) { backStackEntry ->
             val matchId = backStackEntry.arguments?.getString("matchId") ?: ""
+            val isUserJoined = backStackEntry.arguments?.getBoolean("isUserJoined") ?: false
 
             MatchDetailScreen(
                 matchId = matchId,
+                isUserJoined = isUserJoined,
                 onBackClick = {
                     navController.popBackStack()
+                },
+                onJoinClick = {
+                    navController.navigate(Routes.Matches.route) {
+                        popUpTo(Routes.Home.route) {
+                            inclusive = false
+                        }
+                        launchSingleTop = true
+                    }
+                },
+                onLeaveClick = {
+                    navController.navigate(Routes.Matches.route) {
+                        popUpTo(Routes.Matches.route) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
                 }
             )
         }

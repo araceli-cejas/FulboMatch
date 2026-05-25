@@ -56,13 +56,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.OutlinedButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MatchDetailScreen(
     matchId: String,
     onBackClick: () -> Unit,
-    onJoinClick: () -> Unit = {}
+    onJoinClick: () -> Unit = {},
+    onLeaveClick: () -> Unit = {},
+    isUserJoined: Boolean = false
 ) {
     val match = mockMatches.find { it.id == matchId }
 
@@ -110,7 +114,11 @@ fun MatchDetailScreen(
         },
         bottomBar = {
             if (match != null) {
-                BottomJoinButton(onJoinClick = onJoinClick)
+                BottomMatchActionButton(
+                    isUserJoined = isUserJoined,
+                    onJoinClick = onJoinClick,
+                    onLeaveClick = onLeaveClick
+                )
             }
         },
         containerColor = Color(0xFFFAF9F8)
@@ -136,7 +144,10 @@ fun MatchDetailScreen(
                     .padding(horizontal = 16.dp, vertical = 18.dp)
                     .semantics { contentDescription = "Detalle del partido" }
             ) {
-                MatchHeroCard(match = match)
+                MatchHeroCard(
+                    match = match,
+                    isUserJoined = isUserJoined
+                )
 
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -161,7 +172,10 @@ fun MatchDetailScreen(
 }
 
 @Composable
-private fun MatchHeroCard(match: MockMatch) {
+private fun MatchHeroCard(
+    match: MockMatch,
+    isUserJoined: Boolean
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
@@ -200,6 +214,23 @@ private fun MatchHeroCard(match: MockMatch) {
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
                         )
+                    }
+
+                    if (isUserJoined) {
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Surface(
+                            shape = RoundedCornerShape(20.dp),
+                            color = Color(0xFFE6F4EA)
+                        ) {
+                            Text(
+                                text = "ANOTADO",
+                                color = GreenPrimary,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -422,7 +453,7 @@ private fun MeetingDetailsCard(match: MockMatch) {
         DetailInfoRow(
             icon = {
                 Text(
-                    text = "⚽",
+                    text = "✓",
                     fontSize = 24.sp,
                     color = GreenPrimary
                 )
@@ -556,18 +587,18 @@ private fun ConfirmedPlayersCard(match: MockMatch) {
             ) {
                 PlayerSlot(name = "Martín", active = true, organizer = true)
                 PlayerSlot(name = "Leo M.", active = true)
-                PlayerSlot(name = "Alejandro", active = true, letter = "A")
-                PlayerSlot(name = "Confirmado", active = true)
-                PlayerSlot(name = "Confirmado", active = true)
+                PlayerSlot(name = "Alej.", active = true, letter = "A")
+                PlayerSlot(name = "Nico", active = true)
+                PlayerSlot(name = "Fede", active = true)
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                PlayerSlot(name = "Confirmado", active = true)
-                PlayerSlot(name = "Confirmado", active = true)
-                PlayerSlot(name = "Confirmado", active = true)
+                PlayerSlot(name = "Tomi", active = true)
+                PlayerSlot(name = "Juan", active = true)
+                PlayerSlot(name = "Lucas", active = true)
                 PlayerSlot(name = "Libre", active = false)
                 PlayerSlot(name = "Libre", active = false)
             }
@@ -689,16 +720,17 @@ private fun DetailSectionCard(
 }
 
 @Composable
-private fun BottomJoinButton(
-    onJoinClick: () -> Unit
+private fun BottomMatchActionButton(
+    isUserJoined: Boolean,
+    onJoinClick: () -> Unit,
+    onLeaveClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = Color(0xFFFAF9F8),
         shadowElevation = 8.dp
     ) {
-        Button(
-            onClick = onJoinClick,
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
@@ -706,26 +738,61 @@ private fun BottomJoinButton(
                     end = 16.dp,
                     top = 10.dp,
                     bottom = 28.dp
-                )
-                .height(52.dp),
-            shape = RoundedCornerShape(10.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = GreenPrimary,
-                contentColor = White
-            )
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Sumarme al partido",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold
-            )
+            if (isUserJoined) {
+                OutlinedButton(
+                    onClick = onLeaveClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    border = BorderStroke(1.dp, Color(0xFFD32F2F)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFD32F2F)
+                    )
+                ) {
+                    Text(
+                        text = "Bajarme del partido",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
 
-            Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "⚽",
-                fontSize = 20.sp
-            )
+                Text(
+                    text = "Se liberará tu cupo y el organizador será notificado.",
+                    fontSize = 13.sp,
+                    color = Color(0xFF6F6F6F)
+                )
+            } else {
+                Button(
+                    onClick = onJoinClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GreenPrimary,
+                        contentColor = White
+                    )
+                ) {
+                    Text(
+                        text = "Sumarme al partido",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Text(
+                        text = "⚽",
+                        fontSize = 20.sp
+                    )
+                }
+            }
         }
     }
 }
