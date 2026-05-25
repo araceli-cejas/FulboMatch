@@ -26,17 +26,24 @@ fun MatchDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detalle del partido", color = White) },
+                title = {
+                    Text(
+                        text = "Detalle del partido",
+                        color = White
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
                             tint = White
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = GreenPrimary)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = GreenPrimary
+                )
             )
         }
     ) { padding ->
@@ -48,12 +55,39 @@ fun MatchDetailScreen(
                 .semantics { contentDescription = "Detalle del partido" }
         ) {
             if (match != null) {
-                Text(match.title, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text(
+                    text = match.title,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("📅 ${match.date} - ${match.time}", fontSize = 16.sp)
-                Text("📍 ${match.location}", fontSize = 16.sp)
-                Text("👥 Jugadores: ${match.players}", fontSize = 16.sp)
-                Text("⚡ Nivel: ${match.level}", fontSize = 16.sp)
+
+                Text(
+                    text = "📅 ${match.dateTime}",
+                    fontSize = 16.sp
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "📍 ${match.location}",
+                    fontSize = 16.sp
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "👥 Jugadores: ${match.players}",
+                    fontSize = 16.sp
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "⚡ Nivel: ${match.level}",
+                    fontSize = 16.sp
+                )
 
                 Spacer(modifier = Modifier.height(32.dp))
 
@@ -63,12 +97,22 @@ fun MatchDetailScreen(
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(26.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = GreenPrimary,
+                        contentColor = White
+                    )
                 ) {
-                    Text("Solicitar unirme", fontSize = 16.sp, color = White)
+                    Text(
+                        text = "Solicitar unirme",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             } else {
-                Text("Partido no encontrado", fontSize = 16.sp)
+                Text(
+                    text = "Partido no encontrado",
+                    fontSize = 16.sp
+                )
             }
         }
     }
