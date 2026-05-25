@@ -441,6 +441,9 @@ private fun PositionDropdown(
                     type = MenuAnchorType.PrimaryNotEditable,
                     enabled = true
                 ),
+            shape = RoundedCornerShape(10.dp),
+            singleLine = true,
+            colors = profileTextFieldColors()
         )
 
         ExposedDropdownMenu(
@@ -450,7 +453,10 @@ private fun PositionDropdown(
             positions.forEach { option ->
                 DropdownMenuItem(
                     text = {
-                        Text(text = option)
+                        Text(
+                            text = option,
+                            color = Color.Black
+                        )
                     },
                     onClick = {
                         onPositionSelected(option)
