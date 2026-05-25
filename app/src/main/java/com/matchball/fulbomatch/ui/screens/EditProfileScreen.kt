@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -76,7 +77,7 @@ fun EditProfileScreen(
     var phone by remember { mutableStateOf("+34 600 123 456") }
     var age by remember { mutableStateOf("24") }
     var zone by remember { mutableStateOf("Caballito, CABA") }
-    var position by remember { mutableStateOf("Mediocampista") }
+    var position by remember { mutableStateOf("Arquero") }
     var description by remember {
         mutableStateOf("Jugador de equipo, me gusta distribuir el balón y mantener el ritmo en el centro del campo. Disponible los fines de semana.")
     }
@@ -179,6 +180,7 @@ fun EditProfileScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 colors = profileTextFieldColors()
             )
+
             Spacer(modifier = Modifier.height(18.dp))
 
             FormLabel("Edad")
@@ -208,7 +210,6 @@ fun EditProfileScreen(
                 colors = profileTextFieldColors()
             )
 
-
             Spacer(modifier = Modifier.height(18.dp))
 
             FormLabel("Zona o barrio")
@@ -232,6 +233,7 @@ fun EditProfileScreen(
                 singleLine = true,
                 colors = profileTextFieldColors()
             )
+
             Spacer(modifier = Modifier.height(18.dp))
 
             FormLabel("Posición preferida")
@@ -448,14 +450,17 @@ private fun PositionDropdown(
 
         ExposedDropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.heightIn(max = 240.dp),
+            containerColor = White
         ) {
             positions.forEach { option ->
                 DropdownMenuItem(
                     text = {
                         Text(
                             text = option,
-                            color = Color.Black
+                            color = Color(0xFF202020),
+                            fontSize = 16.sp
                         )
                     },
                     onClick = {

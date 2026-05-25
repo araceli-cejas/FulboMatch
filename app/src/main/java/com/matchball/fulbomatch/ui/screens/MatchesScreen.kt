@@ -74,7 +74,18 @@ data class UserMatch(
     val isUserJoined: Boolean,
     val isOrganizer: Boolean
 )
-
+data class PastMatch(
+    val id: String,
+    val title: String,
+    val location: String,
+    val day: String,
+    val month: String,
+    val time: String,
+    val result: String,
+    val isUserJoined: Boolean,
+    val isOrganizer: Boolean,
+    val status: String = "FINALIZADO"
+)
 val userMatches = listOf(
     UserMatch(
         id = "1",
@@ -101,7 +112,41 @@ val userMatches = listOf(
         isOrganizer = true
     )
 )
-
+val pastMatches = listOf(
+    PastMatch(
+        id = "past_1",
+        title = "Cancha El Clásico",
+        location = "Palermo, CABA",
+        day = "12",
+        month = "OCT",
+        time = "19:00 hs",
+        result = "5 - 3",
+        isUserJoined = true,
+        isOrganizer = false
+    ),
+    PastMatch(
+        id = "past_2",
+        title = "La Canchita F5",
+        location = "Belgrano, CABA",
+        day = "05",
+        month = "OCT",
+        time = "20:30 hs",
+        result = "2 - 2",
+        isUserJoined = true,
+        isOrganizer = false
+    ),
+    PastMatch(
+        id = "past_3",
+        title = "Fútbol City",
+        location = "Vicente López, GBA",
+        day = "28",
+        month = "SEP",
+        time = "18:00 hs",
+        result = "1 - 4",
+        isUserJoined = false,
+        isOrganizer = true
+    )
+)
 @Composable
 fun MatchesScreen(
     onHomeClick: () -> Unit,
@@ -179,14 +224,37 @@ fun MatchesScreen(
                     }
                 }
             } else {
-                EmptyPastMatches()
+                MatchesFilterChips(
+                    selectedFilter = selectedFilter,
+                    onFilterSelected = { selectedFilter = it }
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                val visiblePastMatches = when (selectedFilter) {
+                    MatchFilter.TODOS -> pastMatches
+                    MatchFilter.ME_SUME -> pastMatches.filter { it.isUserJoined }
+                    MatchFilter.ORGANIZO -> pastMatches.filter { it.isOrganizer }
+                }
+
+                if (visiblePastMatches.isEmpty()) {
+                    EmptyFilteredMatches(selectedFilter = selectedFilter)
+                } else {
+                    visiblePastMatches.forEach { match ->
+                        PastMatchCard(
+                            match = match,
+                            onClick = { onMatchClick(match.id) }
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
-
 @Composable
 private fun MatchesHeader(
     onNotificationsClick: () -> Unit
@@ -524,7 +592,132 @@ private fun UserMatchCard(
         }
     }
 }
+@Composable
+private fun PastMatchCard(
+    match: PastMatch,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF7F5F5)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    text = match.title,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF202020),
+                    modifier = Modifier.weight(1f)
+                )
 
+                FinishedStatusChip()
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Place,
+                    contentDescription = "Ubicación",
+                    tint = Color(0xFF4F574C),
+                    modifier = Modifier.size(16.dp)
+                )
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                Text(
+                    text = match.location,
+                    fontSize = 14.sp,
+                    color = Color(0xFF4F574C)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            HorizontalDivider(
+                color = Color(0xFFE8E5E5),
+                thickness = 1.dp
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                DateBox(
+                    day = match.day,
+                    month = match.month
+                )
+
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccessTime,
+                                contentDescription = "Hora",
+                                tint = Color(0xFF4F574C),
+                                modifier = Modifier.size(18.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(6.dp))
+
+                            Text(
+                                text = match.time,
+                                fontSize = 14.sp,
+                                color = Color(0xFF202020)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Text(
+                            text = match.result,
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GreenPrimary
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            HorizontalDivider(
+                color = Color(0xFFE8E5E5),
+                thickness = 1.dp
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Ver detalles >",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = GreenPrimary,
+                modifier = Modifier.clickable { onClick() }
+            )
+        }
+    }
+}
 @Composable
 private fun DateBox(
     day: String,
@@ -574,7 +767,21 @@ private fun StatusChip(status: String) {
         )
     }
 }
-
+@Composable
+private fun FinishedStatusChip() {
+    Surface(
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xFFE5E5E5)
+    ) {
+        Text(
+            text = "FINALIZADO",
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF7A7A7A),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+        )
+    }
+}
 @Composable
 private fun EmptyPastMatches() {
     Column(
