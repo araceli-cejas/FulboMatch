@@ -14,7 +14,7 @@ import com.matchball.fulbomatch.ui.screens.OnboardingScreen
 import com.matchball.fulbomatch.ui.screens.ProfileScreen
 import com.matchball.fulbomatch.ui.screens.RegisterScreen
 import com.matchball.fulbomatch.ui.screens.RequestsScreen
-
+import com.matchball.fulbomatch.ui.screens.RecuperarContraseñaScreen
 @Composable
 fun NavGraph(navController: NavHostController) {
     NavHost(
@@ -40,6 +40,9 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onRegisterClick = {
                     navController.navigate(Routes.Register.route)
+                },
+                onRecuperarClick = {  // ← NUEVA FUNCIÓN
+                    navController.navigate(Routes.RecuperarContraseña.route)
                 }
             )
         }
@@ -57,6 +60,11 @@ fun NavGraph(navController: NavHostController) {
             )
         }
 
+        composable(Routes.RecuperarContraseña.route) {
+            RecuperarContraseñaScreen(
+                onBackClick = { navController.popBackStack() }
+            )
+        }
         composable(Routes.Home.route) {
             HomeScreen(
                 onMatchClick = { matchId ->
