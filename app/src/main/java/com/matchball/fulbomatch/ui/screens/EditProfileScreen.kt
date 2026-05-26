@@ -57,6 +57,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.theme.GrayMedium
@@ -70,7 +71,8 @@ fun EditProfileScreen(
     onSaveClick: () -> Unit = {},
     onHomeClick: () -> Unit = onBackClick,
     onMatchesClick: () -> Unit = {},
-    onCreateMatchClick: () -> Unit = {}
+    onCreateMatchClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {}
 ) {
     var fullName by remember { mutableStateOf("Lucas Fernández") }
     var email by remember { mutableStateOf("lucasfer@gmail.com") }
@@ -109,7 +111,8 @@ fun EditProfileScreen(
                 .semantics { contentDescription = "Pantalla de editar perfil" }
         ) {
             EditProfileHeader(
-                onBackClick = onBackClick
+                onBackClick = onBackClick,
+                onNotificationsClick = onNotificationsClick
             )
 
             Spacer(modifier = Modifier.height(22.dp))
@@ -270,7 +273,7 @@ fun EditProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.End
+                textAlign = TextAlign.End
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -300,7 +303,8 @@ fun EditProfileScreen(
 
 @Composable
 private fun EditProfileHeader(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onNotificationsClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -332,7 +336,7 @@ private fun EditProfileHeader(
             )
         }
 
-        IconButton(onClick = { }) {
+        IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",

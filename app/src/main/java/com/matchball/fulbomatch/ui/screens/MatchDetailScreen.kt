@@ -72,6 +72,7 @@ fun MatchDetailScreen(
     onLeaveClick: () -> Unit = {},
     onEditMatchClick: (String) -> Unit = {},
     onStatisticsClick: (String) -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     isUserJoined: Boolean = false,
     isOrganizer: Boolean = false,
     isFinished: Boolean = false
@@ -108,7 +109,7 @@ fun MatchDetailScreen(
                         )
                     }
 
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = onNotificationsClick) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Notificaciones",

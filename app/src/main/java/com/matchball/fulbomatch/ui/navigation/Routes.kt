@@ -23,7 +23,7 @@ sealed class Routes(val route: String) {
         }
     }
     object Matches : Routes("matches")
+    object Notifications : Routes("notifications")
     object Profile : Routes("profile")
     object EditProfile : Routes("edit_profile")
-    object Requests : Routes("requests")
 }

@@ -13,12 +13,13 @@ import com.matchball.fulbomatch.ui.screens.HomeScreen
 import com.matchball.fulbomatch.ui.screens.LoginScreen
 import com.matchball.fulbomatch.ui.screens.MatchDetailScreen
 import com.matchball.fulbomatch.ui.screens.MatchesScreen
+import com.matchball.fulbomatch.ui.screens.NotificationsScreen
 import com.matchball.fulbomatch.ui.screens.OnboardingScreen
 import com.matchball.fulbomatch.ui.screens.ProfileScreen
 import com.matchball.fulbomatch.ui.screens.RecuperarContraseñaScreen
 import com.matchball.fulbomatch.ui.screens.RegisterScreen
-import com.matchball.fulbomatch.ui.screens.RequestsScreen
 import com.matchball.fulbomatch.ui.screens.StatisticsScreen
+
 @Composable
 fun NavGraph(navController: NavHostController) {
     NavHost(
@@ -92,7 +93,9 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Routes.Profile.route)
                 },
                 onRequestsClick = {
-                    navController.navigate(Routes.Requests.route)
+                    navController.navigate(Routes.Notifications.route) {
+                        launchSingleTop = true
+                    }
                 },
                 onMatchesClick = {
                     navController.navigate(Routes.Matches.route)
@@ -122,7 +125,9 @@ fun NavGraph(navController: NavHostController) {
                     )
                 },
                 onRequestsClick = {
-                    navController.navigate(Routes.Requests.route)
+                    navController.navigate(Routes.Notifications.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -181,9 +186,15 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onStatisticsClick = { id ->
                     navController.navigate(Routes.MatchStatistics.createRoute(id))
+                },
+                onNotificationsClick = {
+                    navController.navigate(Routes.Notifications.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
+
         composable(
             route = Routes.MatchStatistics.route,
             arguments = listOf(
@@ -216,9 +227,15 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Routes.Profile.route) {
                         launchSingleTop = true
                     }
+                },
+                onNotificationsClick = {
+                    navController.navigate(Routes.Notifications.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
+
         composable(Routes.CreateMatch.route) {
             CreateMatchScreen(
                 onMatchCreated = {
@@ -232,6 +249,11 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onMatchesClick = {
                     navController.navigate(Routes.Matches.route)
+                },
+                onNotificationsClick = {
+                    navController.navigate(Routes.Notifications.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -278,6 +300,11 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Routes.Profile.route) {
                         launchSingleTop = true
                     }
+                },
+                onNotificationsClick = {
+                    navController.navigate(Routes.Notifications.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -298,6 +325,11 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onEditProfileClick = {
                     navController.navigate(Routes.EditProfile.route)
+                },
+                onNotificationsClick = {
+                    navController.navigate(Routes.Notifications.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
@@ -318,14 +350,37 @@ fun NavGraph(navController: NavHostController) {
                 },
                 onCreateMatchClick = {
                     navController.navigate(Routes.CreateMatch.route)
+                },
+                onNotificationsClick = {
+                    navController.navigate(Routes.Notifications.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }
 
-        composable(Routes.Requests.route) {
-            RequestsScreen(
+        composable(Routes.Notifications.route) {
+            NotificationsScreen(
                 onBackClick = {
                     navController.popBackStack()
+                },
+                onHomeClick = {
+                    navController.navigate(Routes.Home.route) {
+                        launchSingleTop = true
+                    }
+                },
+                onMatchesClick = {
+                    navController.navigate(Routes.Matches.route) {
+                        launchSingleTop = true
+                    }
+                },
+                onCreateClick = {
+                    navController.navigate(Routes.CreateMatch.route)
+                },
+                onProfileClick = {
+                    navController.navigate(Routes.Profile.route) {
+                        launchSingleTop = true
+                    }
                 }
             )
         }

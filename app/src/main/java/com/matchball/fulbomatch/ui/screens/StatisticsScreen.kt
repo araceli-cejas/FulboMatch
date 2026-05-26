@@ -69,7 +69,8 @@ fun StatisticsScreen(
     onHomeClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onCreateClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onNotificationsClick: () -> Unit = {}
 ) {
     val match = getFinishedMatchDetail(matchId)
 
@@ -102,7 +103,7 @@ fun StatisticsScreen(
                         )
                     }
 
-                    IconButton(onClick = { }) {
+                    IconButton(onClick = onNotificationsClick) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Notificaciones",

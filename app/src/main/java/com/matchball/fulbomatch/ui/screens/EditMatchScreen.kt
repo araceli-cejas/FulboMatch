@@ -65,7 +65,8 @@ fun EditMatchScreen(
     onHomeClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onCreateMatchClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    onNotificationsClick: () -> Unit = {}
 ) {
     val initialTitle = when (matchId) {
         "2" -> "Fútbol 7 Mix"
@@ -104,7 +105,10 @@ fun EditMatchScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp, vertical = 10.dp)
         ) {
-            EditMatchHeader(onBackClick = onBackClick)
+            EditMatchHeader(
+                onBackClick = onBackClick,
+                onNotificationsClick = onNotificationsClick
+            )
 
             Spacer(modifier = Modifier.height(14.dp))
 
@@ -378,7 +382,8 @@ fun EditMatchScreen(
 
 @Composable
 private fun EditMatchHeader(
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    onNotificationsClick: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -410,7 +415,7 @@ private fun EditMatchHeader(
             )
         }
 
-        IconButton(onClick = { }) {
+        IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",

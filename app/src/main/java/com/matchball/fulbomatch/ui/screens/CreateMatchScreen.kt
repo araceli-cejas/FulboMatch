@@ -68,7 +68,8 @@ fun CreateMatchScreen(
     onMatchCreated: () -> Unit,
     onBackClick: () -> Unit,
     onProfileClick: () -> Unit = {},
-    onMatchesClick: () -> Unit = {}
+    onMatchesClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {}
 ) {
     var title by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
@@ -98,7 +99,9 @@ fun CreateMatchScreen(
                 .padding(horizontal = 22.dp, vertical = 12.dp)
                 .semantics { contentDescription = "Formulario para crear partido" }
         ) {
-            CreateMatchHeader()
+            CreateMatchHeader(
+                onNotificationsClick = onNotificationsClick
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -366,7 +369,9 @@ fun CreateMatchScreen(
 }
 
 @Composable
-private fun CreateMatchHeader() {
+private fun CreateMatchHeader(
+    onNotificationsClick: () -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
@@ -390,7 +395,7 @@ private fun CreateMatchHeader() {
             )
         }
 
-        IconButton(onClick = { }) {
+        IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",

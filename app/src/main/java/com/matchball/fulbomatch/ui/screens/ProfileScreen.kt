@@ -58,7 +58,8 @@ fun ProfileScreen(
     onHomeClick: () -> Unit = onBackClick,
     onCreateMatchClick: () -> Unit = {},
     onMatchesClick: () -> Unit = {},
-    onEditProfileClick: () -> Unit = {}
+    onEditProfileClick: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {}
 ) {
     Scaffold(
         bottomBar = {
@@ -80,7 +81,9 @@ fun ProfileScreen(
                 .semantics { contentDescription = "Pantalla de perfil de usuario" },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            ProfileHeader()
+            ProfileHeader(
+                onNotificationsClick = onNotificationsClick
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 
@@ -146,7 +149,9 @@ fun ProfileScreen(
 }
 
 @Composable
-private fun ProfileHeader() {
+private fun ProfileHeader(
+    onNotificationsClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -172,7 +177,7 @@ private fun ProfileHeader() {
             )
         }
 
-        IconButton(onClick = { }) {
+        IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",
@@ -266,7 +271,7 @@ private fun ProfileStatsRow() {
 
         ProfileStatCard(
             number = "8",
-            label = "SOLICITUDES",
+            label = "ANOTADOS",
             modifier = Modifier.weight(1f)
         )
     }
