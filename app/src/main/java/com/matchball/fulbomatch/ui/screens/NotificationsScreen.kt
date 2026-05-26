@@ -20,11 +20,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.EditCalendar
+import androidx.compose.material.icons.filled.EventBusy
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.PersonRemove
 import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -46,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
+
 
 private val NotificationsBackground = Color(0xFFFAF9F8)
 private val TextDark = Color(0xFF202020)
@@ -111,7 +113,7 @@ fun NotificationsScreen(
                 title = "Partido editado",
                 description = "El organizador realizó cambios en el partido del domingo.",
                 time = "Hace 2 min",
-                icon = Icons.Default.DateRange,
+                icon = Icons.Default.EditCalendar,
                 iconTint = Color.White,
                 iconBackground = GreenPrimary
             )
@@ -120,7 +122,7 @@ fun NotificationsScreen(
                 title = "Nuevo jugador anotado",
                 description = "Martín se sumó a tu partido.",
                 time = "Hace 2 min",
-                icon = Icons.Default.Person,
+                icon = Icons.Default.PersonAdd,
                 iconTint = Color.White,
                 iconBackground = GreenPrimary
             )
@@ -129,7 +131,7 @@ fun NotificationsScreen(
                 title = "Partido cancelado",
                 description = "El organizador canceló el partido del sábado.",
                 time = "Hace 1 h",
-                icon = Icons.Default.Close,
+                icon = Icons.Default.EventBusy,
                 iconTint = DangerRed,
                 iconBackground = DangerSoft
             )
@@ -138,7 +140,7 @@ fun NotificationsScreen(
                 title = "Jugador dado de baja",
                 description = "Un jugador se bajó de tu partido del domingo.",
                 time = "Hace 1 h",
-                icon = Icons.Default.Remove,
+                icon = Icons.Default.PersonRemove,
                 iconTint = WarningDark,
                 iconBackground = WarningOrange
             )

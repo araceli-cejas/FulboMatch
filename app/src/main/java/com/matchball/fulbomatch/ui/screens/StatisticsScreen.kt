@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 
 private val ScreenBackground = Color(0xFFFAF9F8)
 private val CardBackground = Color.White
@@ -95,13 +96,7 @@ fun StatisticsScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { }) {
-                        Text(
-                            text = "☾",
-                            fontSize = 24.sp,
-                            color = GreenPrimary
-                        )
-                    }
+                    MoonIconButton()
 
                     IconButton(onClick = onNotificationsClick) {
                         Icon(

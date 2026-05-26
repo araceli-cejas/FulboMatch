@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 
 @Composable
 fun ProfileScreen(
@@ -59,8 +60,10 @@ fun ProfileScreen(
     onCreateMatchClick: () -> Unit = {},
     onMatchesClick: () -> Unit = {},
     onEditProfileClick: () -> Unit = {},
-    onNotificationsClick: () -> Unit = {}
-) {
+    onNotificationsClick: () -> Unit = {},
+    onLogoutClick: () -> Unit = {},
+    onDeleteAccountClick: () -> Unit = {}
+){
     Scaffold(
         bottomBar = {
             ProfileBottomBar(
@@ -131,7 +134,9 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            LogoutButton()
+            LogoutButton(
+                onClick = onLogoutClick
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -140,7 +145,9 @@ fun ProfileScreen(
                 color = Color(0xFFE53935),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable { }
+                modifier = Modifier.clickable {
+                    onDeleteAccountClick()
+                }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -169,13 +176,7 @@ private fun ProfileHeader(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        IconButton(onClick = { }) {
-            Text(
-                text = "☾",
-                fontSize = 25.sp,
-                color = GreenPrimary
-            )
-        }
+        MoonIconButton()
 
         IconButton(onClick = onNotificationsClick) {
             Icon(
@@ -231,7 +232,7 @@ private fun ProfileUserInfo() {
         }
 
         Text(
-            text = "  •  28 años  •  ",
+            text = "  •  24 años  •  ",
             fontSize = 15.sp,
             color = Color(0xFF444444)
         )
@@ -270,7 +271,7 @@ private fun ProfileStatsRow() {
         )
 
         ProfileStatCard(
-            number = "8",
+            number = "7",
             label = "ANOTADOS",
             modifier = Modifier.weight(1f)
         )
@@ -428,12 +429,14 @@ private fun CircleIconContainer(
 }
 
 @Composable
-private fun LogoutButton() {
+private fun LogoutButton(
+    onClick: () -> Unit
+) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(66.dp)
-            .clickable { },
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         color = Color(0xFFFFD6D6)
     ) {

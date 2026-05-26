@@ -55,6 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 
 private enum class MatchFilter(val label: String) {
     TODOS("Todos"),
@@ -274,13 +275,7 @@ private fun MatchesHeader(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        IconButton(onClick = { }) {
-            Text(
-                text = "☾",
-                fontSize = 25.sp,
-                color = GreenPrimary
-            )
-        }
+        MoonIconButton()
 
         IconButton(onClick = onNotificationsClick) {
             Icon(

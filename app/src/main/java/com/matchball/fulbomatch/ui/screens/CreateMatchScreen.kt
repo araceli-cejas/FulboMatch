@@ -62,7 +62,7 @@ import com.matchball.fulbomatch.ui.theme.GrayMedium
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
 import kotlin.math.roundToInt
-
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 @Composable
 fun CreateMatchScreen(
     onMatchCreated: () -> Unit,
@@ -387,13 +387,7 @@ private fun CreateMatchHeader(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        IconButton(onClick = { }) {
-            Text(
-                text = "☾",
-                fontSize = 25.sp,
-                color = GreenPrimary
-            )
-        }
+        MoonIconButton()
 
         IconButton(onClick = onNotificationsClick) {
             Icon(

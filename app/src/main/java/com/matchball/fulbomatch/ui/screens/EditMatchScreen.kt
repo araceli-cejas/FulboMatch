@@ -55,7 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
-
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 @Composable
 fun EditMatchScreen(
     matchId: String,
@@ -407,13 +407,7 @@ private fun EditMatchHeader(
             modifier = Modifier.weight(1f)
         )
 
-        IconButton(onClick = { }) {
-            Text(
-                text = "☾",
-                fontSize = 23.sp,
-                color = GreenPrimary
-            )
-        }
+        MoonIconButton()
 
         IconButton(onClick = onNotificationsClick) {
             Icon(

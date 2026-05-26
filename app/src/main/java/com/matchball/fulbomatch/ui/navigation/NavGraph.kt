@@ -330,6 +330,22 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Routes.Notifications.route) {
                         launchSingleTop = true
                     }
+                },
+                onLogoutClick = {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(Routes.Home.route) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
+                },
+                onDeleteAccountClick = {
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(Routes.Home.route) {
+                            inclusive = true
+                        }
+                        launchSingleTop = true
+                    }
                 }
             )
         }

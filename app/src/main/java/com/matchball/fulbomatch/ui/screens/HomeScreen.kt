@@ -64,6 +64,7 @@ import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.theme.GrayMedium
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 
 data class MockMatch(
     val id: String,
@@ -233,13 +234,7 @@ private fun HomeHeader(
 
         Spacer(modifier = Modifier.weight(1f))
 
-        IconButton(onClick = { }) {
-            Text(
-                text = "☾",
-                fontSize = 24.sp,
-                color = GreenPrimary
-            )
-        }
+        MoonIconButton()
 
         IconButton(onClick = onNotificationsClick) {
             Icon(

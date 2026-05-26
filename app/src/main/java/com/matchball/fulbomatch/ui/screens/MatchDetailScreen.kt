@@ -61,7 +61,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
-
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,13 +101,7 @@ fun MatchDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { }) {
-                        Text(
-                            text = "☾",
-                            fontSize = 24.sp,
-                            color = GreenPrimary
-                        )
-                    }
+                    MoonIconButton()
 
                     IconButton(onClick = onNotificationsClick) {
                         Icon(

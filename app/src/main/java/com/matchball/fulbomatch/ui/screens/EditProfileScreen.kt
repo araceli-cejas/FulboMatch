@@ -63,7 +63,7 @@ import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.theme.GrayMedium
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
-
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
@@ -328,13 +328,7 @@ private fun EditProfileHeader(
             modifier = Modifier.weight(1f)
         )
 
-        IconButton(onClick = { }) {
-            Text(
-                text = "☾",
-                fontSize = 23.sp,
-                color = GreenPrimary
-            )
-        }
+        MoonIconButton()
 
         IconButton(onClick = onNotificationsClick) {
             Icon(
