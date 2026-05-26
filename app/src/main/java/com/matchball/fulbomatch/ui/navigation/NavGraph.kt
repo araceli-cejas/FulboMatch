@@ -18,7 +18,7 @@ import com.matchball.fulbomatch.ui.screens.ProfileScreen
 import com.matchball.fulbomatch.ui.screens.RecuperarContraseñaScreen
 import com.matchball.fulbomatch.ui.screens.RegisterScreen
 import com.matchball.fulbomatch.ui.screens.RequestsScreen
-
+import com.matchball.fulbomatch.ui.screens.StatisticsScreen
 @Composable
 fun NavGraph(navController: NavHostController) {
     NavHost(
@@ -29,7 +29,9 @@ fun NavGraph(navController: NavHostController) {
             OnboardingScreen(
                 onStartClick = {
                     navController.navigate(Routes.Login.route) {
-                        popUpTo(Routes.Onboarding.route) { inclusive = true }
+                        popUpTo(Routes.Onboarding.route) {
+                            inclusive = true
+                        }
                     }
                 }
             )
@@ -39,7 +41,9 @@ fun NavGraph(navController: NavHostController) {
             LoginScreen(
                 onLoginSuccess = {
                     navController.navigate(Routes.Home.route) {
-                        popUpTo(Routes.Login.route) { inclusive = true }
+                        popUpTo(Routes.Login.route) {
+                            inclusive = true
+                        }
                     }
                 },
                 onRegisterClick = {
@@ -55,7 +59,9 @@ fun NavGraph(navController: NavHostController) {
             RegisterScreen(
                 onRegisterSuccess = {
                     navController.navigate(Routes.Home.route) {
-                        popUpTo(Routes.Register.route) { inclusive = true }
+                        popUpTo(Routes.Register.route) {
+                            inclusive = true
+                        }
                     }
                 },
                 onBackClick = {
@@ -76,7 +82,7 @@ fun NavGraph(navController: NavHostController) {
             HomeScreen(
                 onMatchClick = { matchId ->
                     navController.navigate(
-                        "${Routes.MatchDetail.createRoute(matchId)}?isUserJoined=false&isOrganizer=false"
+                        "${Routes.MatchDetail.createRoute(matchId)}?isUserJoined=false&isOrganizer=false&isFinished=false"
                     )
                 },
                 onCreateMatchClick = {
@@ -108,10 +114,11 @@ fun NavGraph(navController: NavHostController) {
                     navController.navigate(Routes.Profile.route)
                 },
                 onMatchClick = { matchId ->
+                    val isFinished = matchId.startsWith("past_")
                     val isOrganizer = matchId == "2" || matchId == "past_3"
 
                     navController.navigate(
-                        "${Routes.MatchDetail.createRoute(matchId)}?isUserJoined=true&isOrganizer=$isOrganizer"
+                        "${Routes.MatchDetail.createRoute(matchId)}?isUserJoined=true&isOrganizer=$isOrganizer&isFinished=$isFinished"
                     )
                 },
                 onRequestsClick = {
@@ -121,7 +128,7 @@ fun NavGraph(navController: NavHostController) {
         }
 
         composable(
-            route = "${Routes.MatchDetail.route}?isUserJoined={isUserJoined}&isOrganizer={isOrganizer}",
+            route = "${Routes.MatchDetail.route}?isUserJoined={isUserJoined}&isOrganizer={isOrganizer}&isFinished={isFinished}",
             arguments = listOf(
                 navArgument("matchId") {
                     type = NavType.StringType
@@ -133,17 +140,23 @@ fun NavGraph(navController: NavHostController) {
                 navArgument("isOrganizer") {
                     type = NavType.BoolType
                     defaultValue = false
+                },
+                navArgument("isFinished") {
+                    type = NavType.BoolType
+                    defaultValue = false
                 }
             )
         ) { backStackEntry ->
             val matchId = backStackEntry.arguments?.getString("matchId") ?: ""
             val isUserJoined = backStackEntry.arguments?.getBoolean("isUserJoined") ?: false
             val isOrganizer = backStackEntry.arguments?.getBoolean("isOrganizer") ?: false
+            val isFinished = backStackEntry.arguments?.getBoolean("isFinished") ?: false
 
             MatchDetailScreen(
                 matchId = matchId,
                 isUserJoined = isUserJoined,
                 isOrganizer = isOrganizer,
+                isFinished = isFinished,
                 onBackClick = {
                     navController.popBackStack()
                 },
@@ -165,10 +178,47 @@ fun NavGraph(navController: NavHostController) {
                         }
                         launchSingleTop = true
                     }
+                },
+                onStatisticsClick = { id ->
+                    navController.navigate(Routes.MatchStatistics.createRoute(id))
                 }
             )
         }
+        composable(
+            route = Routes.MatchStatistics.route,
+            arguments = listOf(
+                navArgument("matchId") {
+                    type = NavType.StringType
+                }
+            )
+        ) { backStackEntry ->
+            val matchId = backStackEntry.arguments?.getString("matchId") ?: ""
 
+            StatisticsScreen(
+                matchId = matchId,
+                onBackClick = {
+                    navController.popBackStack()
+                },
+                onHomeClick = {
+                    navController.navigate(Routes.Home.route) {
+                        launchSingleTop = true
+                    }
+                },
+                onMatchesClick = {
+                    navController.navigate(Routes.Matches.route) {
+                        launchSingleTop = true
+                    }
+                },
+                onCreateClick = {
+                    navController.navigate(Routes.CreateMatch.route)
+                },
+                onProfileClick = {
+                    navController.navigate(Routes.Profile.route) {
+                        launchSingleTop = true
+                    }
+                }
+            )
+        }
         composable(Routes.CreateMatch.route) {
             CreateMatchScreen(
                 onMatchCreated = {

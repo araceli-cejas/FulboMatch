@@ -17,7 +17,11 @@ sealed class Routes(val route: String) {
     object EditMatch : Routes("edit_match/{matchId}") {
         fun createRoute(matchId: String) = "edit_match/$matchId"
     }
-
+    object MatchStatistics : Routes("match_statistics/{matchId}") {
+        fun createRoute(matchId: String): String {
+            return "match_statistics/$matchId"
+        }
+    }
     object Matches : Routes("matches")
     object Profile : Routes("profile")
     object EditProfile : Routes("edit_profile")

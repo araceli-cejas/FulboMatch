@@ -47,6 +47,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -60,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MatchDetailScreen(
@@ -68,10 +71,13 @@ fun MatchDetailScreen(
     onJoinClick: () -> Unit = {},
     onLeaveClick: () -> Unit = {},
     onEditMatchClick: (String) -> Unit = {},
+    onStatisticsClick: (String) -> Unit = {},
     isUserJoined: Boolean = false,
-    isOrganizer: Boolean = false
-) {
+    isOrganizer: Boolean = false,
+    isFinished: Boolean = false
+){
     val match = mockMatches.find { it.id == matchId }
+    val finishedMatch = getFinishedMatchDetail(matchId)
 
     Scaffold(
         topBar = {
@@ -116,7 +122,7 @@ fun MatchDetailScreen(
             )
         },
         bottomBar = {
-            if (match != null) {
+            if (!isFinished && match != null) {
                 BottomMatchActionButton(
                     isUserJoined = isUserJoined,
                     isOrganizer = isOrganizer,
@@ -130,49 +136,75 @@ fun MatchDetailScreen(
         },
         containerColor = Color(0xFFFAF9F8)
     ) { padding ->
-        if (match == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Partido no encontrado",
-                    fontSize = 16.sp
-                )
+        when {
+            isFinished -> {
+                if (finishedMatch == null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "Partido finalizado no encontrado",
+                            fontSize = 16.sp
+                        )
+                    }
+                } else {
+                    FinishedMatchContent(
+                        match = finishedMatch,
+                        modifier = Modifier.padding(padding),
+                        onStatisticsClick = onStatisticsClick
+                    )
+                }
             }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 18.dp)
-                    .semantics { contentDescription = "Detalle del partido" }
-            ) {
-                MatchHeroCard(
-                    match = match,
-                    isUserJoined = isUserJoined
-                )
 
-                Spacer(modifier = Modifier.height(20.dp))
+            match == null -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Partido no encontrado",
+                        fontSize = 16.sp
+                    )
+                }
+            }
 
-                OrganizerCard()
+            else -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 18.dp)
+                        .semantics { contentDescription = "Detalle del partido" }
+                ) {
+                    MatchHeroCard(
+                        match = match,
+                        isUserJoined = isUserJoined
+                    )
 
-                Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                MeetingDetailsCard(match = match)
+                    OrganizerCard()
 
-                Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                RulesCard()
+                    MeetingDetailsCard(match = match)
 
-                Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                ConfirmedPlayersCard(match = match)
+                    RulesCard()
 
-                Spacer(modifier = Modifier.height(36.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    ConfirmedPlayersCard(match = match)
+
+                    Spacer(modifier = Modifier.height(36.dp))
+                }
             }
         }
     }
@@ -733,6 +765,460 @@ private fun DetailSectionCard(
     }
 }
 
+
+
+
+
+@Composable
+private fun FinishedMatchContent(
+    match: FinishedMatchDetail,
+    modifier: Modifier = Modifier,
+    onStatisticsClick: (String) -> Unit
+){
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 18.dp)
+            .semantics { contentDescription = "Detalle del partido finalizado" }
+    ) {
+        FinishedMatchHeroCard(match = match)
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        FinishedOrganizerCard(match = match)
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            FinishedInfoCard(
+                modifier = Modifier.weight(1f),
+                icon = {
+                    SurfaceGrassIcon(
+                        modifier = Modifier.size(28.dp),
+                        color = GreenPrimary
+                    )
+                },
+                title = "SUPERFICIE",
+                description = match.surface
+            )
+
+            FinishedInfoCard(
+                modifier = Modifier.weight(1f),
+                icon = {
+                    Text(
+                        text = "★",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GreenPrimary
+                    )
+                },
+                title = "NIVEL",
+                description = match.level
+            )
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        FinishedPlayersCard(match = match)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = {
+                onStatisticsClick(match.id)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(26.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = GreenPrimary,
+                contentColor = White
+            )
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StatsBarsIcon(
+                    modifier = Modifier.size(20.dp),
+                    color = White
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Text(
+                    text = "Ver estadísticas",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(36.dp))
+    }
+}
+
+@Composable
+private fun FinishedMatchHeroCard(
+    match: FinishedMatchDetail
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFF1EFEF)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text(
+                        text = match.title,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF202020),
+                        lineHeight = 31.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Place,
+                            contentDescription = "Ubicación",
+                            tint = Color(0xFF4F574C),
+                            modifier = Modifier.size(17.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(
+                            text = match.location,
+                            fontSize = 14.sp,
+                            color = Color(0xFF4F574C)
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color(0xFFE5E5E5),
+                    border = BorderStroke(1.dp, Color(0xFFCFCFCF))
+                ) {
+                    Text(
+                        text = "FINALIZADO",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF6F6F6F),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(22.dp))
+
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                color = Color(0xFFEDEBEB)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.width(92.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Fecha",
+                                tint = Color(0xFF4F574C),
+                                modifier = Modifier.size(16.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(4.dp))
+
+                            Text(
+                                text = match.date,
+                                fontSize = 12.sp,
+                                color = Color(0xFF4F574C)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.AccessTime,
+                                contentDescription = "Hora",
+                                tint = Color(0xFF4F574C),
+                                modifier = Modifier.size(18.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(4.dp))
+
+                            Text(
+                                text = match.time,
+                                fontSize = 20.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF202020),
+                                lineHeight = 22.sp
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(14.dp))
+
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.White
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "RESULTADO",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF6F6F6F)
+                            )
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = match.resultHome,
+                                    fontSize = 42.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = GreenPrimary
+                                )
+
+                                Text(
+                                    text = " - ",
+                                    fontSize = 28.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF9A9A9A)
+                                )
+
+                                Text(
+                                    text = match.resultAway,
+                                    fontSize = 42.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF3F473F)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FinishedOrganizerCard(
+    match: FinishedMatchDetail
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE9E7E7))
+                    .border(2.dp, GreenPrimary, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = "Organizador",
+                    tint = GreenPrimary,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.width(14.dp))
+
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "ORGANIZADOR",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF6F6F6F)
+                )
+
+                Text(
+                    text = match.organizerName,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF202020)
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = "★ ${match.rating}",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = GreenPrimary
+                )
+
+                Text(
+                    text = match.ratingDescription,
+                    fontSize = 12.sp,
+                    color = Color(0xFF4F574C)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FinishedInfoCard(
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit,
+    title: String,
+    description: String
+) {
+    Card(
+        modifier = modifier.height(126.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            icon()
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = title,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF6F6F6F)
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            Text(
+                text = description,
+                fontSize = 16.sp,
+                color = Color(0xFF202020),
+                lineHeight = 20.sp
+            )
+        }
+    }
+}
+
+@Composable
+private fun FinishedPlayersCard(
+    match: FinishedMatchDetail
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "👥  Jugadores",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF202020),
+                    modifier = Modifier.weight(1f)
+                )
+
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = Color(0xFFE5E5E5)
+                ) {
+                    Text(
+                        text = "${match.players} Confirmados",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF6F6F6F),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                PlayerSlot(name = "Juan P.", active = true, organizer = true)
+                PlayerSlot(name = "Matías", active = true)
+                PlayerSlot(name = "Sofi", active = true, letter = "S")
+                PlayerSlot(name = "Marcos", active = true, letter = "M")
+                PlayerSlot(name = "Fede", active = true)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                PlayerSlot(name = "Lucas", active = true)
+                PlayerSlot(name = "Gastón", active = true, letter = "G")
+                PlayerSlot(name = "Pablo", active = true)
+                PlayerSlot(name = "Nico", active = true)
+                PlayerSlot(name = "Ezequiel", active = true, letter = "E")
+            }
+        }
+    }
+}
+
 @Composable
 private fun BottomMatchActionButton(
     isUserJoined: Boolean,
@@ -917,7 +1403,37 @@ private fun SurfaceGrassIcon(
         )
     }
 }
+@Composable
+private fun StatsBarsIcon(
+    modifier: Modifier = Modifier,
+    color: Color = White
+) {
+    Canvas(modifier = modifier) {
+        val barWidth = size.width * 0.18f
+        val radius = barWidth / 2
 
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(size.width * 0.16f, size.height * 0.58f),
+            size = Size(barWidth, size.height * 0.30f),
+            cornerRadius = CornerRadius(radius, radius)
+        )
+
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(size.width * 0.41f, size.height * 0.36f),
+            size = Size(barWidth, size.height * 0.52f),
+            cornerRadius = CornerRadius(radius, radius)
+        )
+
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(size.width * 0.66f, size.height * 0.18f),
+            size = Size(barWidth, size.height * 0.70f),
+            cornerRadius = CornerRadius(radius, radius)
+        )
+    }
+}
 private fun getCurrentPlayers(players: String): Int {
     return players.substringBefore("/")
         .trim()
