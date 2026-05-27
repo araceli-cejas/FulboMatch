@@ -30,7 +30,6 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -293,13 +292,7 @@ private fun SearchBar(
                 tint = colors.icon
             )
         },
-        trailingIcon = {
-            Icon(
-                imageVector = Icons.Default.Tune,
-                contentDescription = "Filtros",
-                tint = colors.icon
-            )
-        },
+
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),

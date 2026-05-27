@@ -281,6 +281,7 @@ private fun ProfileHeader(
     }
 }
 
+
 @Composable
 private fun ProfileAvatar(
     colors: ProfileColors
@@ -291,20 +292,14 @@ private fun ProfileAvatar(
         color = colors.avatarBackground,
         shadowElevation = 4.dp
     ) {
-        Box(
+        Image(
+            painter = painterResource(id = R.drawable.hombre),
+            contentDescription = "Foto de perfil",
             modifier = Modifier
                 .fillMaxSize()
-                .clip(CircleShape)
-                .background(colors.accent.copy(alpha = 0.12f)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = "Foto de perfil",
-                tint = colors.accent,
-                modifier = Modifier.size(58.dp)
-            )
-        }
+                .clip(CircleShape),
+            contentScale = ContentScale.Crop
+        )
     }
 }
 

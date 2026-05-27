@@ -63,6 +63,10 @@ import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.matchball.fulbomatch.R
 
 private data class EditProfileColors(
     val background: Color,
@@ -459,20 +463,14 @@ private fun EditProfileAvatar(
             modifier = Modifier.size(118.dp),
             contentAlignment = Alignment.BottomEnd
         ) {
-            Box(
+            Image(
+                painter = painterResource(id = R.drawable.hombre),
+                contentDescription = "Foto de perfil",
                 modifier = Modifier
                     .size(112.dp)
-                    .clip(CircleShape)
-                    .background(colors.avatarBackground),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Foto de perfil",
-                    tint = colors.accent,
-                    modifier = Modifier.size(62.dp)
-                )
-            }
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
 
             Box(
                 modifier = Modifier
