@@ -61,10 +61,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GrayMedium
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
-import com.matchball.fulbomatch.ui.components.MoonIconButton
 
 data class MockMatch(
     val id: String,
@@ -94,7 +94,7 @@ val mockMatches = listOf(
         level = "Intermedio",
         status = "ABIERTO",
         almostFull = false,
-        imageRes = R.drawable.pelota2,
+        imageRes = R.drawable.cancha,
         tags = listOf("Césped Natural", "Fútbol 5")
     ),
     MockMatch(
@@ -107,13 +107,15 @@ val mockMatches = listOf(
         level = "Avanzado",
         status = "CASI LLENO",
         almostFull = true,
-        imageRes = R.drawable.pelota2,
+        imageRes = R.drawable.cancha,
         tags = listOf("Sintético")
     )
 )
 
 @Composable
 fun HomeScreen(
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {},
     onMatchClick: (String) -> Unit,
     onCreateMatchClick: () -> Unit,
     onProfileClick: () -> Unit,
@@ -122,6 +124,8 @@ fun HomeScreen(
 ) {
     var searchText by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Todos") }
+
+    val colors = homeColors(isDarkMode)
 
     val filteredMatches = mockMatches.filter { match ->
         val matchesSearch =
@@ -139,21 +143,25 @@ fun HomeScreen(
     Scaffold(
         bottomBar = {
             HomeBottomBar(
+                colors = colors,
                 onCreateMatchClick = onCreateMatchClick,
                 onProfileClick = onProfileClick,
                 onMatchesClick = onMatchesClick
             )
         },
-        containerColor = Color(0xFFF6F6F6)
+        containerColor = colors.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF6F6F6))
+                .background(colors.background)
                 .semantics { contentDescription = "Pantalla principal con partidos recomendados" }
         ) {
             HomeHeader(
+                colors = colors,
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onNotificationsClick = onRequestsClick
             )
 
@@ -170,23 +178,25 @@ fun HomeScreen(
                 item {
                     SearchBar(
                         searchText = searchText,
-                        onSearchTextChange = { searchText = it }
+                        onSearchTextChange = { searchText = it },
+                        colors = colors
                     )
                 }
 
                 item {
                     FilterRow(
                         selectedFilter = selectedFilter,
-                        onFilterSelected = { selectedFilter = it }
+                        onFilterSelected = { selectedFilter = it },
+                        colors = colors
                     )
                 }
 
                 item {
                     Text(
-                        text = "Partidos recomendados",
+                        text = if (isDarkMode) "Partidos Cercanos" else "Partidos recomendados",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.Black
+                        color = colors.textPrimary
                     )
                 }
 
@@ -195,7 +205,7 @@ fun HomeScreen(
                         Text(
                             text = "No se encontraron partidos con esa búsqueda.",
                             fontSize = 14.sp,
-                            color = GrayMedium,
+                            color = colors.textSecondary,
                             modifier = Modifier.padding(top = 12.dp)
                         )
                     }
@@ -203,6 +213,7 @@ fun HomeScreen(
                     items(filteredMatches) { match ->
                         MatchCard(
                             match = match,
+                            colors = colors,
                             onClick = { onMatchClick(match.id) }
                         )
                     }
@@ -214,33 +225,46 @@ fun HomeScreen(
 
 @Composable
 private fun HomeHeader(
+    colors: HomeColors,
+    isDarkMode: Boolean,
+    onToggleDarkMode: () -> Unit,
     onNotificationsClick: () -> Unit
 ) {
+    val logoRes = if (isDarkMode) {
+        R.drawable.logo_dark
+    } else {
+        R.drawable.nombre
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(White)
+            .background(colors.headerBackground)
             .padding(horizontal = 20.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(id = R.drawable.nombre),
+            painter = painterResource(id = logoRes),
             contentDescription = "Logo FulboMatch",
             modifier = Modifier
-                .width(150.dp)
+                .width(190.dp)
                 .height(42.dp),
             contentScale = ContentScale.Fit
         )
 
         Spacer(modifier = Modifier.weight(1f))
 
-        MoonIconButton()
+        MoonIconButton(
+            isDarkMode = isDarkMode,
+            iconColor = colors.headerIcon,
+            onClick = onToggleDarkMode
+        )
 
         IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",
-                tint = GreenPrimary
+                tint = colors.headerIcon
             )
         }
     }
@@ -249,7 +273,8 @@ private fun HomeHeader(
 @Composable
 private fun SearchBar(
     searchText: String,
-    onSearchTextChange: (String) -> Unit
+    onSearchTextChange: (String) -> Unit,
+    colors: HomeColors
 ) {
     OutlinedTextField(
         value = searchText,
@@ -257,7 +282,7 @@ private fun SearchBar(
         placeholder = {
             Text(
                 text = "Buscar partido por zona",
-                color = Color(0xFF555555),
+                color = colors.textSecondary,
                 fontSize = 14.sp
             )
         },
@@ -265,14 +290,14 @@ private fun SearchBar(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Buscar",
-                tint = Color(0xFF333333)
+                tint = colors.icon
             )
         },
         trailingIcon = {
             Icon(
                 imageVector = Icons.Default.Tune,
                 contentDescription = "Filtros",
-                tint = Color(0xFF333333)
+                tint = colors.icon
             )
         },
         modifier = Modifier
@@ -282,12 +307,12 @@ private fun SearchBar(
         singleLine = true,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = GreenPrimary,
-            unfocusedBorderColor = Color(0xFFD0D0D0),
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.Black,
+            unfocusedBorderColor = colors.border,
+            focusedTextColor = colors.textPrimary,
+            unfocusedTextColor = colors.textPrimary,
             cursorColor = GreenPrimary,
-            focusedContainerColor = White,
-            unfocusedContainerColor = White
+            focusedContainerColor = colors.inputBackground,
+            unfocusedContainerColor = colors.inputBackground
         )
     )
 }
@@ -295,7 +320,8 @@ private fun SearchBar(
 @Composable
 private fun FilterRow(
     selectedFilter: String,
-    onFilterSelected: (String) -> Unit
+    onFilterSelected: (String) -> Unit,
+    colors: HomeColors
 ) {
     val filters = listOf("Todos", "Césped Natural", "Sintético", "Fútbol 5")
 
@@ -309,7 +335,8 @@ private fun FilterRow(
             FilterPill(
                 text = filter,
                 selected = selectedFilter == filter,
-                onClick = { onFilterSelected(filter) }
+                onClick = { onFilterSelected(filter) },
+                colors = colors
             )
         }
     }
@@ -319,15 +346,16 @@ private fun FilterRow(
 private fun FilterPill(
     text: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    colors: HomeColors
 ) {
     Surface(
         modifier = Modifier
             .height(36.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(8.dp),
-        color = if (selected) GreenPrimary else White,
-        border = if (selected) null else BorderStroke(1.dp, Color(0xFFD0D0D0))
+        color = if (selected) colors.selectedChipBackground else colors.cardBackground,
+        border = if (selected) null else BorderStroke(1.dp, colors.border)
     ) {
         Box(
             modifier = Modifier.padding(horizontal = 14.dp),
@@ -336,7 +364,7 @@ private fun FilterPill(
             Text(
                 text = text,
                 fontSize = 13.sp,
-                color = if (selected) White else Color.Black,
+                color = if (selected) colors.selectedChipText else colors.textPrimary,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
             )
         }
@@ -346,12 +374,13 @@ private fun FilterPill(
 @Composable
 private fun MatchCard(
     match: MockMatch,
+    colors: HomeColors,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = White),
+        colors = CardDefaults.cardColors(containerColor = colors.cardBackground),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column {
@@ -390,7 +419,7 @@ private fun MatchCard(
                     text = match.title,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color.Black
+                    color = colors.textPrimary
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -401,7 +430,7 @@ private fun MatchCard(
                     Icon(
                         imageVector = Icons.Default.DateRange,
                         contentDescription = "Día y horario",
-                        tint = Color(0xFF455044),
+                        tint = colors.icon,
                         modifier = Modifier.size(16.dp)
                     )
 
@@ -410,7 +439,7 @@ private fun MatchCard(
                     Text(
                         text = match.dateTime,
                         fontSize = 13.sp,
-                        color = Color(0xFF555555)
+                        color = colors.textSecondary
                     )
                 }
 
@@ -422,7 +451,7 @@ private fun MatchCard(
                     Icon(
                         imageVector = Icons.Default.Place,
                         contentDescription = "Ubicación",
-                        tint = Color(0xFF455044),
+                        tint = colors.icon,
                         modifier = Modifier.size(16.dp)
                     )
 
@@ -431,14 +460,14 @@ private fun MatchCard(
                     Text(
                         text = match.location,
                         fontSize = 13.sp,
-                        color = Color(0xFF555555)
+                        color = colors.textSecondary
                     )
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
                 HorizontalDivider(
-                    color = Color(0xFFE0E0E0),
+                    color = colors.divider,
                     thickness = 1.dp
                 )
 
@@ -448,25 +477,25 @@ private fun MatchCard(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AvatarStack()
+                    AvatarStack(colors = colors)
 
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(
                         text = match.players,
                         fontSize = 13.sp,
-                        color = Color(0xFF555555),
+                        color = colors.textSecondary,
                         modifier = Modifier.weight(1f)
                     )
 
                     Surface(
                         shape = RoundedCornerShape(4.dp),
-                        color = Color(0xFFEDEBEB)
+                        color = colors.levelBackground
                     ) {
                         Text(
                             text = match.level,
                             fontSize = 11.sp,
-                            color = Color.Black,
+                            color = colors.textPrimary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                         )
                     }
@@ -481,8 +510,8 @@ private fun MatchCard(
                         .height(48.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GreenPrimary,
-                        contentColor = White
+                        containerColor = colors.selectedChipBackground,
+                        contentColor = colors.selectedChipText
                     )
                 ) {
                     Text(
@@ -518,7 +547,9 @@ private fun StatusBadge(
 }
 
 @Composable
-private fun AvatarStack() {
+private fun AvatarStack(
+    colors: HomeColors
+) {
     Row {
         repeat(3) { index ->
             Box(
@@ -547,13 +578,13 @@ private fun AvatarStack() {
             modifier = Modifier
                 .size(22.dp)
                 .clip(CircleShape)
-                .background(Color(0xFFEDEBEB)),
+                .background(colors.levelBackground),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "+10",
                 fontSize = 8.sp,
-                color = Color.Black
+                color = colors.textPrimary
             )
         }
     }
@@ -561,6 +592,7 @@ private fun AvatarStack() {
 
 @Composable
 private fun HomeBottomBar(
+    colors: HomeColors,
     onCreateMatchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onMatchesClick: () -> Unit
@@ -570,7 +602,7 @@ private fun HomeBottomBar(
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp),
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFFF3F1F1),
+        color = colors.bottomBarBackground,
         tonalElevation = 4.dp
     ) {
         Row(
@@ -590,23 +622,27 @@ private fun HomeBottomBar(
             UnselectedBottomItem(
                 iconText = "⚽",
                 label = "Partidos",
+                colors = colors,
                 onClick = onMatchesClick
             )
 
             UnselectedBottomItem(
                 icon = Icons.Default.Add,
                 label = "Crear",
+                colors = colors,
                 onClick = onCreateMatchClick
             )
 
             UnselectedBottomItem(
                 icon = Icons.Default.Person,
                 label = "Perfil",
+                colors = colors,
                 onClick = onProfileClick
             )
         }
     }
 }
+
 @Composable
 private fun SelectedBottomItem(
     icon: ImageVector,
@@ -649,6 +685,7 @@ private fun SelectedBottomItem(
 private fun UnselectedBottomItem(
     icon: ImageVector,
     label: String,
+    colors: HomeColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -662,7 +699,7 @@ private fun UnselectedBottomItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = Color(0xFF4F574C),
+            tint = colors.bottomIcon,
             modifier = Modifier.size(26.dp)
         )
 
@@ -670,7 +707,7 @@ private fun UnselectedBottomItem(
 
         Text(
             text = label,
-            color = Color(0xFF4F574C),
+            color = colors.bottomIcon,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium
         )
@@ -681,6 +718,7 @@ private fun UnselectedBottomItem(
 private fun UnselectedBottomItem(
     iconText: String,
     label: String,
+    colors: HomeColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -694,16 +732,74 @@ private fun UnselectedBottomItem(
         Text(
             text = iconText,
             fontSize = 24.sp,
-            color = Color(0xFF4F574C)
+            color = colors.bottomIcon
         )
 
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = label,
-            color = Color(0xFF4F574C),
+            color = colors.bottomIcon,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+private data class HomeColors(
+    val background: Color,
+    val headerBackground: Color,
+    val cardBackground: Color,
+    val inputBackground: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val icon: Color,
+    val headerIcon: Color,
+    val border: Color,
+    val divider: Color,
+    val levelBackground: Color,
+    val bottomBarBackground: Color,
+    val bottomIcon: Color,
+    val selectedChipBackground: Color,
+    val selectedChipText: Color
+)
+
+private fun homeColors(isDarkMode: Boolean): HomeColors {
+    return if (isDarkMode) {
+        HomeColors(
+            background = Color(0xFF111111),
+            headerBackground = Color(0xFF111111),
+            cardBackground = Color(0xFF1A1A1A),
+            inputBackground = Color(0xFF1A1A1A),
+            textPrimary = Color(0xFFEDEDED),
+            textSecondary = Color(0xFFBDBDBD),
+            icon = Color(0xFFC9D1C9),
+            headerIcon = Color(0xFFC9D1C9),
+            border = Color(0xFF3E463E),
+            divider = Color(0xFF2A2A2A),
+            levelBackground = Color(0xFF333333),
+            bottomBarBackground = Color(0xFF151515),
+            bottomIcon = Color(0xFFC9D1C9),
+            selectedChipBackground = Color(0xFF9EF49B),
+            selectedChipText = Color(0xFF111111)
+        )
+    } else {
+        HomeColors(
+            background = Color(0xFFF6F6F6),
+            headerBackground = White,
+            cardBackground = White,
+            inputBackground = White,
+            textPrimary = Color.Black,
+            textSecondary = Color(0xFF555555),
+            icon = Color(0xFF333333),
+            headerIcon = GreenPrimary,
+            border = Color(0xFFD0D0D0),
+            divider = Color(0xFFE0E0E0),
+            levelBackground = Color(0xFFEDEBEB),
+            bottomBarBackground = Color(0xFFF3F1F1),
+            bottomIcon = Color(0xFF4F574C),
+            selectedChipBackground = GreenPrimary,
+            selectedChipText = White
         )
     }
 }

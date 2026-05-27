@@ -76,7 +76,7 @@ fun LoginScreen(
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Image(
-                painter = painterResource(id = R.drawable.pelota2),
+                painter = painterResource(id = R.drawable.fondo),
                 contentDescription = "Pelota de fútbol",
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop

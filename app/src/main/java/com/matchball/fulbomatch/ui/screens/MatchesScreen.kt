@@ -54,13 +54,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
-import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.components.MoonIconButton
+import com.matchball.fulbomatch.ui.theme.GreenPrimary
 
 private enum class MatchFilter(val label: String) {
     TODOS("Todos"),
     ME_SUME("Me sumé"),
-    ORGANIZO("Organizo")
+    ORGANIZO("Organicé")
 }
 
 data class UserMatch(
@@ -75,6 +75,7 @@ data class UserMatch(
     val isUserJoined: Boolean,
     val isOrganizer: Boolean
 )
+
 data class PastMatch(
     val id: String,
     val title: String,
@@ -87,6 +88,7 @@ data class PastMatch(
     val isOrganizer: Boolean,
     val status: String = "FINALIZADO"
 )
+
 val userMatches = listOf(
     UserMatch(
         id = "1",
@@ -113,6 +115,7 @@ val userMatches = listOf(
         isOrganizer = true
     )
 )
+
 val pastMatches = listOf(
     PastMatch(
         id = "past_1",
@@ -148,8 +151,11 @@ val pastMatches = listOf(
         isOrganizer = true
     )
 )
+
 @Composable
 fun MatchesScreen(
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {},
     onHomeClick: () -> Unit,
     onCreateMatchClick: () -> Unit,
     onProfileClick: () -> Unit,
@@ -159,26 +165,34 @@ fun MatchesScreen(
     var selectedTab by remember { mutableStateOf("Próximos") }
     var selectedFilter by remember { mutableStateOf(MatchFilter.TODOS) }
 
+    val colors = matchesColors(isDarkMode)
+
     Scaffold(
         bottomBar = {
             MatchesBottomBar(
+                colors = colors,
                 onHomeClick = onHomeClick,
                 onCreateMatchClick = onCreateMatchClick,
                 onProfileClick = onProfileClick
             )
         },
-        containerColor = Color(0xFFFAF9F8)
+        containerColor = colors.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFFAF9F8))
+                .background(colors.background)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp, vertical = 12.dp)
                 .semantics { contentDescription = "Pantalla de partidos" }
         ) {
-            MatchesHeader(onNotificationsClick = onRequestsClick)
+            MatchesHeader(
+                colors = colors,
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
+                onNotificationsClick = onRequestsClick
+            )
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -186,26 +200,28 @@ fun MatchesScreen(
                 text = "Partidos",
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF202020)
+                color = colors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(22.dp))
 
             MatchesTabs(
                 selectedTab = selectedTab,
+                colors = colors,
                 onTabSelected = { selectedTab = it }
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            MatchesFilterChips(
+                selectedFilter = selectedFilter,
+                colors = colors,
+                onFilterSelected = { selectedFilter = it }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
             if (selectedTab == "Próximos") {
-                MatchesFilterChips(
-                    selectedFilter = selectedFilter,
-                    onFilterSelected = { selectedFilter = it }
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
                 val visibleMatches = when (selectedFilter) {
                     MatchFilter.TODOS -> userMatches
                     MatchFilter.ME_SUME -> userMatches.filter { it.isUserJoined }
@@ -213,11 +229,15 @@ fun MatchesScreen(
                 }
 
                 if (visibleMatches.isEmpty()) {
-                    EmptyFilteredMatches(selectedFilter = selectedFilter)
+                    EmptyFilteredMatches(
+                        selectedFilter = selectedFilter,
+                        colors = colors
+                    )
                 } else {
                     visibleMatches.forEach { match ->
                         UserMatchCard(
                             match = match,
+                            colors = colors,
                             onClick = { onMatchClick(match.id) }
                         )
 
@@ -225,13 +245,6 @@ fun MatchesScreen(
                     }
                 }
             } else {
-                MatchesFilterChips(
-                    selectedFilter = selectedFilter,
-                    onFilterSelected = { selectedFilter = it }
-                )
-
-                Spacer(modifier = Modifier.height(20.dp))
-
                 val visiblePastMatches = when (selectedFilter) {
                     MatchFilter.TODOS -> pastMatches
                     MatchFilter.ME_SUME -> pastMatches.filter { it.isUserJoined }
@@ -239,11 +252,15 @@ fun MatchesScreen(
                 }
 
                 if (visiblePastMatches.isEmpty()) {
-                    EmptyFilteredMatches(selectedFilter = selectedFilter)
+                    EmptyFilteredMatches(
+                        selectedFilter = selectedFilter,
+                        colors = colors
+                    )
                 } else {
                     visiblePastMatches.forEach { match ->
                         PastMatchCard(
                             match = match,
+                            colors = colors,
                             onClick = { onMatchClick(match.id) }
                         )
 
@@ -256,32 +273,48 @@ fun MatchesScreen(
         }
     }
 }
+
 @Composable
 private fun MatchesHeader(
+    colors: MatchesColors,
+    isDarkMode: Boolean,
+    onToggleDarkMode: () -> Unit,
     onNotificationsClick: () -> Unit
 ) {
+    val logoRes = if (isDarkMode) {
+        R.drawable.logo_dark
+    } else {
+        R.drawable.nombre
+    }
+
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colors.background),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(id = R.drawable.nombre),
+            painter = painterResource(id = logoRes),
             contentDescription = "Logo FulboMatch",
             modifier = Modifier
-                .width(155.dp)
+                .width(190.dp)
                 .height(42.dp),
             contentScale = ContentScale.Fit
         )
 
         Spacer(modifier = Modifier.weight(1f))
 
-        MoonIconButton()
+        MoonIconButton(
+            isDarkMode = isDarkMode,
+            iconColor = colors.headerIcon,
+            onClick = onToggleDarkMode
+        )
 
         IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",
-                tint = GreenPrimary
+                tint = colors.headerIcon
             )
         }
     }
@@ -290,6 +323,7 @@ private fun MatchesHeader(
 @Composable
 private fun MatchesTabs(
     selectedTab: String,
+    colors: MatchesColors,
     onTabSelected: (String) -> Unit
 ) {
     val tabs = listOf("Próximos", "Pasados")
@@ -309,7 +343,7 @@ private fun MatchesTabs(
                         text = tab,
                         fontSize = 14.sp,
                         fontWeight = if (selectedTab == tab) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selectedTab == tab) GreenPrimary else Color(0xFF444444)
+                        color = if (selectedTab == tab) colors.accent else colors.textSecondary
                     )
 
                     Spacer(modifier = Modifier.height(12.dp))
@@ -319,7 +353,7 @@ private fun MatchesTabs(
                             .fillMaxWidth()
                             .height(2.dp)
                             .background(
-                                if (selectedTab == tab) GreenPrimary else Color.Transparent
+                                if (selectedTab == tab) colors.accent else Color.Transparent
                             )
                     )
                 }
@@ -327,7 +361,7 @@ private fun MatchesTabs(
         }
 
         HorizontalDivider(
-            color = Color(0xFFE0E0E0),
+            color = colors.divider,
             thickness = 1.dp
         )
     }
@@ -336,6 +370,7 @@ private fun MatchesTabs(
 @Composable
 private fun MatchesFilterChips(
     selectedFilter: MatchFilter,
+    colors: MatchesColors,
     onFilterSelected: (MatchFilter) -> Unit
 ) {
     Row(
@@ -348,6 +383,7 @@ private fun MatchesFilterChips(
             MatchFilterChip(
                 filter = filter,
                 selected = selectedFilter == filter,
+                colors = colors,
                 onClick = { onFilterSelected(filter) }
             )
         }
@@ -358,15 +394,16 @@ private fun MatchesFilterChips(
 private fun MatchFilterChip(
     filter: MatchFilter,
     selected: Boolean,
+    colors: MatchesColors,
     onClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        color = if (selected) Color(0xFFE2F8E9) else Color.White,
+        color = if (selected) colors.selectedChipBackground else colors.cardBackground,
         border = BorderStroke(
             width = 1.dp,
-            color = if (selected) Color(0xFFB9EFC8) else Color(0xFFE5E2E2)
+            color = if (selected) colors.selectedChipBorder else colors.border
         )
     ) {
         Row(
@@ -375,7 +412,8 @@ private fun MatchFilterChip(
         ) {
             MatchFilterIcon(
                 filter = filter,
-                selected = selected
+                selected = selected,
+                colors = colors
             )
 
             Spacer(modifier = Modifier.width(8.dp))
@@ -384,7 +422,7 @@ private fun MatchFilterChip(
                 text = filter.label,
                 fontSize = 14.sp,
                 fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                color = if (selected) GreenPrimary else Color(0xFF444444)
+                color = if (selected) colors.selectedChipText else colors.textSecondary
             )
         }
     }
@@ -393,7 +431,8 @@ private fun MatchFilterChip(
 @Composable
 private fun MatchFilterIcon(
     filter: MatchFilter,
-    selected: Boolean
+    selected: Boolean,
+    colors: MatchesColors
 ) {
     when (filter) {
         MatchFilter.TODOS -> {
@@ -401,14 +440,14 @@ private fun MatchFilterIcon(
                 modifier = Modifier
                     .size(18.dp)
                     .clip(RoundedCornerShape(50.dp))
-                    .background(if (selected) GreenPrimary else Color.Transparent),
+                    .background(if (selected) colors.selectedChipText else Color.Transparent),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "✓",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (selected) Color.White else Color(0xFF4F574C)
+                    color = if (selected) Color.White else colors.textSecondary
                 )
             }
         }
@@ -417,7 +456,7 @@ private fun MatchFilterIcon(
             Icon(
                 imageVector = Icons.Default.Groups,
                 contentDescription = "Me sumé",
-                tint = if (selected) GreenPrimary else Color(0xFF4F574C),
+                tint = if (selected) colors.selectedChipText else colors.textSecondary,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -425,8 +464,8 @@ private fun MatchFilterIcon(
         MatchFilter.ORGANIZO -> {
             Icon(
                 imageVector = Icons.Default.Person,
-                contentDescription = "Organizo",
-                tint = if (selected) GreenPrimary else Color(0xFF4F574C),
+                contentDescription = "Organicé",
+                tint = if (selected) colors.selectedChipText else colors.textSecondary,
                 modifier = Modifier.size(18.dp)
             )
         }
@@ -435,7 +474,8 @@ private fun MatchFilterIcon(
 
 @Composable
 private fun EmptyFilteredMatches(
-    selectedFilter: MatchFilter
+    selectedFilter: MatchFilter,
+    colors: MatchesColors
 ) {
     Column(
         modifier = Modifier
@@ -450,7 +490,7 @@ private fun EmptyFilteredMatches(
                 MatchFilter.ORGANIZO -> "Todavía no organizaste ningún partido."
             },
             fontSize = 15.sp,
-            color = Color(0xFF8A8A8A)
+            color = colors.textMuted
         )
     }
 }
@@ -458,13 +498,14 @@ private fun EmptyFilteredMatches(
 @Composable
 private fun UserMatchCard(
     match: UserMatch,
+    colors: MatchesColors,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF7F5F5)
+            containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -478,7 +519,7 @@ private fun UserMatchCard(
                     text = match.title,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF202020),
+                    color = colors.textPrimary,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -487,29 +528,15 @@ private fun UserMatchCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Place,
-                    contentDescription = "Ubicación",
-                    tint = Color(0xFF4F574C),
-                    modifier = Modifier.size(16.dp)
-                )
-
-                Spacer(modifier = Modifier.width(4.dp))
-
-                Text(
-                    text = match.location,
-                    fontSize = 14.sp,
-                    color = Color(0xFF4F574C)
-                )
-            }
+            LocationRow(
+                location = match.location,
+                colors = colors
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
             HorizontalDivider(
-                color = Color(0xFFE8E5E5),
+                color = colors.divider,
                 thickness = 1.dp
             )
 
@@ -520,7 +547,8 @@ private fun UserMatchCard(
             ) {
                 DateBox(
                     day = match.day,
-                    month = match.month
+                    month = match.month,
+                    colors = colors
                 )
 
                 Spacer(modifier = Modifier.width(16.dp))
@@ -532,7 +560,7 @@ private fun UserMatchCard(
                         Icon(
                             imageVector = Icons.Default.AccessTime,
                             contentDescription = "Hora",
-                            tint = Color(0xFF4F574C),
+                            tint = colors.icon,
                             modifier = Modifier.size(18.dp)
                         )
 
@@ -541,7 +569,7 @@ private fun UserMatchCard(
                         Text(
                             text = match.time,
                             fontSize = 14.sp,
-                            color = Color(0xFF202020)
+                            color = colors.textPrimary
                         )
                     }
 
@@ -553,7 +581,7 @@ private fun UserMatchCard(
                         Icon(
                             imageVector = Icons.Default.Groups,
                             contentDescription = "Jugadores",
-                            tint = Color(0xFF4F574C),
+                            tint = colors.icon,
                             modifier = Modifier.size(18.dp)
                         )
 
@@ -562,7 +590,7 @@ private fun UserMatchCard(
                         Text(
                             text = match.players,
                             fontSize = 14.sp,
-                            color = Color(0xFF4F574C)
+                            color = colors.textSecondary
                         )
                     }
                 }
@@ -571,7 +599,7 @@ private fun UserMatchCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             HorizontalDivider(
-                color = Color(0xFFE8E5E5),
+                color = colors.divider,
                 thickness = 1.dp
             )
 
@@ -581,22 +609,24 @@ private fun UserMatchCard(
                 text = "Ver detalles >",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = GreenPrimary,
+                color = colors.accent,
                 modifier = Modifier.clickable { onClick() }
             )
         }
     }
 }
+
 @Composable
 private fun PastMatchCard(
     match: PastMatch,
+    colors: MatchesColors,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF7F5F5)
+            containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -610,7 +640,7 @@ private fun PastMatchCard(
                     text = match.title,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Medium,
-                    color = Color(0xFF202020),
+                    color = colors.textPrimary,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -619,29 +649,15 @@ private fun PastMatchCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Place,
-                    contentDescription = "Ubicación",
-                    tint = Color(0xFF4F574C),
-                    modifier = Modifier.size(16.dp)
-                )
-
-                Spacer(modifier = Modifier.width(4.dp))
-
-                Text(
-                    text = match.location,
-                    fontSize = 14.sp,
-                    color = Color(0xFF4F574C)
-                )
-            }
+            LocationRow(
+                location = match.location,
+                colors = colors
+            )
 
             Spacer(modifier = Modifier.height(10.dp))
 
             HorizontalDivider(
-                color = Color(0xFFE8E5E5),
+                color = colors.divider,
                 thickness = 1.dp
             )
 
@@ -653,7 +669,8 @@ private fun PastMatchCard(
             ) {
                 DateBox(
                     day = match.day,
-                    month = match.month
+                    month = match.month,
+                    colors = colors
                 )
 
                 Box(
@@ -669,7 +686,7 @@ private fun PastMatchCard(
                             Icon(
                                 imageVector = Icons.Default.AccessTime,
                                 contentDescription = "Hora",
-                                tint = Color(0xFF4F574C),
+                                tint = colors.icon,
                                 modifier = Modifier.size(18.dp)
                             )
 
@@ -678,7 +695,7 @@ private fun PastMatchCard(
                             Text(
                                 text = match.time,
                                 fontSize = 14.sp,
-                                color = Color(0xFF202020)
+                                color = colors.textPrimary
                             )
                         }
 
@@ -688,7 +705,7 @@ private fun PastMatchCard(
                             text = match.result,
                             fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
-                            color = GreenPrimary
+                            color = colors.accent
                         )
                     }
                 }
@@ -697,7 +714,7 @@ private fun PastMatchCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             HorizontalDivider(
-                color = Color(0xFFE8E5E5),
+                color = colors.divider,
                 thickness = 1.dp
             )
 
@@ -707,21 +724,48 @@ private fun PastMatchCard(
                 text = "Ver detalles >",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = GreenPrimary,
+                color = colors.accent,
                 modifier = Modifier.clickable { onClick() }
             )
         }
     }
 }
+
+@Composable
+private fun LocationRow(
+    location: String,
+    colors: MatchesColors
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.Place,
+            contentDescription = "Ubicación",
+            tint = colors.icon,
+            modifier = Modifier.size(16.dp)
+        )
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        Text(
+            text = location,
+            fontSize = 14.sp,
+            color = colors.textSecondary
+        )
+    }
+}
+
 @Composable
 private fun DateBox(
     day: String,
-    month: String
+    month: String,
+    colors: MatchesColors
 ) {
     Surface(
         modifier = Modifier.size(width = 62.dp, height = 64.dp),
         shape = RoundedCornerShape(6.dp),
-        color = Color(0xFFE5F0E4)
+        color = colors.dateBoxBackground
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -732,14 +776,14 @@ private fun DateBox(
                 text = day,
                 fontSize = 23.sp,
                 fontWeight = FontWeight.Bold,
-                color = GreenPrimary
+                color = colors.accent
             )
 
             Text(
                 text = month,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = GreenPrimary
+                color = colors.accent
             )
         }
     }
@@ -762,6 +806,7 @@ private fun StatusChip(status: String) {
         )
     }
 }
+
 @Composable
 private fun FinishedStatusChip() {
     Surface(
@@ -777,33 +822,10 @@ private fun FinishedStatusChip() {
         )
     }
 }
-@Composable
-private fun EmptyPastMatches() {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 40.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Icon(
-            imageVector = Icons.Default.DateRange,
-            contentDescription = "Sin partidos pasados",
-            tint = Color(0xFFBDBDBD),
-            modifier = Modifier.size(48.dp)
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Text(
-            text = "Todavía no tenés partidos pasados.",
-            fontSize = 15.sp,
-            color = Color(0xFF8A8A8A)
-        )
-    }
-}
 
 @Composable
 private fun MatchesBottomBar(
+    colors: MatchesColors,
     onHomeClick: () -> Unit,
     onCreateMatchClick: () -> Unit,
     onProfileClick: () -> Unit
@@ -813,7 +835,7 @@ private fun MatchesBottomBar(
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp),
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFFF3F1F1),
+        color = colors.bottomBarBackground,
         tonalElevation = 4.dp
     ) {
         Row(
@@ -827,6 +849,7 @@ private fun MatchesBottomBar(
             UnselectedBottomItem(
                 icon = Icons.Default.Home,
                 label = "Inicio",
+                colors = colors,
                 onClick = onHomeClick
             )
 
@@ -839,12 +862,14 @@ private fun MatchesBottomBar(
             UnselectedBottomItem(
                 icon = Icons.Default.Add,
                 label = "Crear",
+                colors = colors,
                 onClick = onCreateMatchClick
             )
 
             UnselectedBottomItem(
                 icon = Icons.Default.Person,
                 label = "Perfil",
+                colors = colors,
                 onClick = onProfileClick
             )
         }
@@ -892,6 +917,7 @@ private fun SelectedBottomItem(
 private fun UnselectedBottomItem(
     icon: ImageVector,
     label: String,
+    colors: MatchesColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -905,7 +931,7 @@ private fun UnselectedBottomItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = Color(0xFF4F574C),
+            tint = colors.bottomIcon,
             modifier = Modifier.size(24.dp)
         )
 
@@ -913,9 +939,70 @@ private fun UnselectedBottomItem(
 
         Text(
             text = label,
-            color = Color(0xFF4F574C),
+            color = colors.bottomIcon,
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+private data class MatchesColors(
+    val background: Color,
+    val cardBackground: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color,
+    val icon: Color,
+    val headerIcon: Color,
+    val border: Color,
+    val divider: Color,
+    val accent: Color,
+    val selectedChipBackground: Color,
+    val selectedChipText: Color,
+    val selectedChipBorder: Color,
+    val dateBoxBackground: Color,
+    val bottomBarBackground: Color,
+    val bottomIcon: Color
+)
+
+private fun matchesColors(isDarkMode: Boolean): MatchesColors {
+    return if (isDarkMode) {
+        MatchesColors(
+            background = Color(0xFF111111),
+            cardBackground = Color(0xFF1A1A1A),
+            textPrimary = Color(0xFFEDEDED),
+            textSecondary = Color(0xFFBDBDBD),
+            textMuted = Color(0xFF9E9E9E),
+            icon = Color(0xFFC9D1C9),
+            headerIcon = Color(0xFFC9D1C9),
+            border = Color(0xFF3E463E),
+            divider = Color(0xFF2A2A2A),
+            accent = Color(0xFF9EF49B),
+            selectedChipBackground = Color(0xFF9EF49B),
+            selectedChipText = Color(0xFF111111),
+            selectedChipBorder = Color(0xFF9EF49B),
+            dateBoxBackground = Color(0xFF22302B),
+            bottomBarBackground = Color(0xFF151515),
+            bottomIcon = Color(0xFFC9D1C9)
+        )
+    } else {
+        MatchesColors(
+            background = Color(0xFFFAF9F8),
+            cardBackground = Color(0xFFF7F5F5),
+            textPrimary = Color(0xFF202020),
+            textSecondary = Color(0xFF4F574C),
+            textMuted = Color(0xFF8A8A8A),
+            icon = Color(0xFF4F574C),
+            headerIcon = GreenPrimary,
+            border = Color(0xFFE5E2E2),
+            divider = Color(0xFFE8E5E5),
+            accent = GreenPrimary,
+            selectedChipBackground = Color(0xFFE2F8E9),
+            selectedChipText = GreenPrimary,
+            selectedChipBorder = Color(0xFFB9EFC8),
+            dateBoxBackground = Color(0xFFE5F0E4),
+            bottomBarBackground = Color(0xFFF3F1F1),
+            bottomIcon = Color(0xFF4F574C)
         )
     }
 }

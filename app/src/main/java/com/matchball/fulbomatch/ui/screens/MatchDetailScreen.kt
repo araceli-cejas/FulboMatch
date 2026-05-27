@@ -46,8 +46,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -59,9 +59,70 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
-import com.matchball.fulbomatch.ui.components.MoonIconButton
+
+private data class MatchDetailColors(
+    val background: Color,
+    val card: Color,
+    val innerCard: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color,
+    val divider: Color,
+    val headerIcon: Color,
+    val accent: Color,
+    val accentText: Color,
+    val chipBackground: Color,
+    val chipText: Color,
+    val playerBackground: Color,
+    val playerInactiveBorder: Color,
+    val bottomBar: Color,
+    val danger: Color
+)
+
+private fun matchDetailColors(isDarkMode: Boolean): MatchDetailColors {
+    return if (isDarkMode) {
+        MatchDetailColors(
+            background = Color(0xFF111111),
+            card = Color(0xFF1E1E1E),
+            innerCard = Color(0xFF2A2A2A),
+            textPrimary = Color(0xFFF2F2F2),
+            textSecondary = Color(0xFFBDBDBD),
+            textMuted = Color(0xFF9E9E9E),
+            divider = Color(0xFF333333),
+            headerIcon = Color(0xFFC9D1C9),
+            accent = Color(0xFF9EF49B),
+            accentText = Color(0xFF111111),
+            chipBackground = Color(0xFF176B2A),
+            chipText = Color(0xFFBDE8B9),
+            playerBackground = Color(0xFF2E2E2E),
+            playerInactiveBorder = Color(0xFF6A6A6A),
+            bottomBar = Color(0xFF1A1A1A),
+            danger = Color(0xFFFF6B6B)
+        )
+    } else {
+        MatchDetailColors(
+            background = Color(0xFFFAF9F8),
+            card = Color(0xFFF1EFEF),
+            innerCard = Color(0xFFE7E4E4),
+            textPrimary = Color(0xFF202020),
+            textSecondary = Color(0xFF4F574C),
+            textMuted = Color(0xFF6F6F6F),
+            divider = Color(0xFFE0E0E0),
+            headerIcon = GreenPrimary,
+            accent = GreenPrimary,
+            accentText = White,
+            chipBackground = GreenPrimary,
+            chipText = Color(0xFFBDE8B9),
+            playerBackground = Color(0xFFE9E7E7),
+            playerInactiveBorder = Color(0xFFBFC6BC),
+            bottomBar = Color(0xFFFAF9F8),
+            danger = Color(0xFFD32F2F)
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,10 +136,13 @@ fun MatchDetailScreen(
     onNotificationsClick: () -> Unit = {},
     isUserJoined: Boolean = false,
     isOrganizer: Boolean = false,
-    isFinished: Boolean = false
-){
+    isFinished: Boolean = false,
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {}
+) {
     val match = mockMatches.find { it.id == matchId }
     val finishedMatch = getFinishedMatchDetail(matchId)
+    val colors = matchDetailColors(isDarkMode)
 
     Scaffold(
         topBar = {
@@ -86,7 +150,7 @@ fun MatchDetailScreen(
                 title = {
                     Text(
                         text = "Detalle partido",
-                        color = GreenPrimary,
+                        color = colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 21.sp
                     )
@@ -96,23 +160,27 @@ fun MatchDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
-                            tint = Color.Black
+                            tint = colors.headerIcon
                         )
                     }
                 },
                 actions = {
-                    MoonIconButton()
+                    MoonIconButton(
+                        isDarkMode = isDarkMode,
+                        iconColor = colors.headerIcon,
+                        onClick = onToggleDarkMode
+                    )
 
                     IconButton(onClick = onNotificationsClick) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Notificaciones",
-                            tint = GreenPrimary
+                            tint = colors.headerIcon
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFFAF9F8)
+                    containerColor = colors.background
                 )
             )
         },
@@ -121,6 +189,7 @@ fun MatchDetailScreen(
                 BottomMatchActionButton(
                     isUserJoined = isUserJoined,
                     isOrganizer = isOrganizer,
+                    colors = colors,
                     onJoinClick = onJoinClick,
                     onLeaveClick = onLeaveClick,
                     onEditClick = {
@@ -129,25 +198,20 @@ fun MatchDetailScreen(
                 )
             }
         },
-        containerColor = Color(0xFFFAF9F8)
+        containerColor = colors.background
     ) { padding ->
         when {
             isFinished -> {
                 if (finishedMatch == null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(padding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Partido finalizado no encontrado",
-                            fontSize = 16.sp
-                        )
-                    }
+                    EmptyDetailMessage(
+                        text = "Partido finalizado no encontrado",
+                        colors = colors,
+                        modifier = Modifier.padding(padding)
+                    )
                 } else {
                     FinishedMatchContent(
                         match = finishedMatch,
+                        colors = colors,
                         modifier = Modifier.padding(padding),
                         onStatisticsClick = onStatisticsClick
                     )
@@ -155,17 +219,11 @@ fun MatchDetailScreen(
             }
 
             match == null -> {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Partido no encontrado",
-                        fontSize = 16.sp
-                    )
-                }
+                EmptyDetailMessage(
+                    text = "Partido no encontrado",
+                    colors = colors,
+                    modifier = Modifier.padding(padding)
+                )
             }
 
             else -> {
@@ -173,30 +231,38 @@ fun MatchDetailScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(padding)
+                        .background(colors.background)
                         .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 18.dp)
                         .semantics { contentDescription = "Detalle del partido" }
                 ) {
                     MatchHeroCard(
                         match = match,
-                        isUserJoined = isUserJoined
+                        isUserJoined = isUserJoined,
+                        colors = colors
                     )
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    OrganizerCard()
+                    OrganizerCard(colors = colors)
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    MeetingDetailsCard(match = match)
+                    MeetingDetailsCard(
+                        match = match,
+                        colors = colors
+                    )
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    RulesCard()
+                    RulesCard(colors = colors)
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    ConfirmedPlayersCard(match = match)
+                    ConfirmedPlayersCard(
+                        match = match,
+                        colors = colors
+                    )
 
                     Spacer(modifier = Modifier.height(36.dp))
                 }
@@ -206,15 +272,36 @@ fun MatchDetailScreen(
 }
 
 @Composable
+private fun EmptyDetailMessage(
+    text: String,
+    colors: MatchDetailColors,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(colors.background),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            color = colors.textPrimary
+        )
+    }
+}
+
+@Composable
 private fun MatchHeroCard(
     match: MockMatch,
-    isUserJoined: Boolean
+    isUserJoined: Boolean,
+    colors: MatchDetailColors
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF1EFEF)
+            containerColor = colors.card
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -227,7 +314,7 @@ private fun MatchHeroCard(
                     .offset(x = 55.dp, y = (-70).dp)
                     .size(170.dp)
                     .clip(CircleShape)
-                    .background(GreenPrimary.copy(alpha = 0.16f))
+                    .background(colors.accent.copy(alpha = 0.16f))
             )
 
             Column(
@@ -239,11 +326,11 @@ private fun MatchHeroCard(
                 ) {
                     Surface(
                         shape = RoundedCornerShape(20.dp),
-                        color = GreenPrimary
+                        color = colors.chipBackground
                     ) {
                         Text(
                             text = match.status,
-                            color = Color(0xFFBDE8B9),
+                            color = colors.chipText,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
@@ -255,11 +342,11 @@ private fun MatchHeroCard(
 
                         Surface(
                             shape = RoundedCornerShape(20.dp),
-                            color = Color(0xFFE6F4EA)
+                            color = colors.innerCard
                         ) {
                             Text(
                                 text = "ANOTADO",
-                                color = GreenPrimary,
+                                color = colors.accent,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
@@ -274,8 +361,8 @@ private fun MatchHeroCard(
                         contentAlignment = Alignment.CenterEnd
                     ) {
                         Text(
-                            text = "\$1500 / jug",
-                            color = GreenPrimary,
+                            text = "$1500 / jug",
+                            color = colors.accent,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold,
                             textAlign = TextAlign.End,
@@ -290,7 +377,7 @@ private fun MatchHeroCard(
                     text = match.title,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF202020)
+                    color = colors.textPrimary
                 )
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -301,7 +388,7 @@ private fun MatchHeroCard(
                     Icon(
                         imageVector = Icons.Default.Place,
                         contentDescription = "Ubicación",
-                        tint = Color(0xFF4F574C),
+                        tint = colors.textSecondary,
                         modifier = Modifier.size(18.dp)
                     )
 
@@ -310,7 +397,7 @@ private fun MatchHeroCard(
                     Text(
                         text = match.location,
                         fontSize = 15.sp,
-                        color = Color(0xFF4F574C)
+                        color = colors.textSecondary
                     )
                 }
 
@@ -322,11 +409,12 @@ private fun MatchHeroCard(
                 ) {
                     DetailSmallBox(
                         modifier = Modifier.weight(1f),
+                        colors = colors,
                         icon = {
                             Icon(
                                 imageVector = Icons.Default.DateRange,
                                 contentDescription = "Fecha",
-                                tint = GreenPrimary,
+                                tint = colors.accent,
                                 modifier = Modifier.size(26.dp)
                             )
                         },
@@ -335,11 +423,12 @@ private fun MatchHeroCard(
 
                     DetailSmallBox(
                         modifier = Modifier.weight(1f),
+                        colors = colors,
                         icon = {
                             Icon(
                                 imageVector = Icons.Default.AccessTime,
                                 contentDescription = "Hora",
-                                tint = GreenPrimary,
+                                tint = colors.accent,
                                 modifier = Modifier.size(26.dp)
                             )
                         },
@@ -354,13 +443,14 @@ private fun MatchHeroCard(
 @Composable
 private fun DetailSmallBox(
     modifier: Modifier = Modifier,
+    colors: MatchDetailColors,
     icon: @Composable () -> Unit,
     text: String
 ) {
     Surface(
         modifier = modifier.height(68.dp),
         shape = RoundedCornerShape(8.dp),
-        color = Color(0xFFE7E4E4)
+        color = colors.innerCard
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -374,7 +464,7 @@ private fun DetailSmallBox(
             Text(
                 text = text,
                 fontSize = 15.sp,
-                color = Color(0xFF202020),
+                color = colors.textPrimary,
                 fontWeight = FontWeight.Medium
             )
         }
@@ -382,18 +472,20 @@ private fun DetailSmallBox(
 }
 
 @Composable
-private fun OrganizerCard() {
-    DetailSectionCard {
+private fun OrganizerCard(
+    colors: MatchDetailColors
+) {
+    DetailSectionCard(colors = colors) {
         Text(
             text = "Organizador",
             fontSize = 21.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF202020)
+            color = colors.textPrimary
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        HorizontalDivider(color = Color(0xFFE0E0E0))
+        HorizontalDivider(color = colors.divider)
 
         Spacer(modifier = Modifier.height(14.dp))
 
@@ -404,14 +496,14 @@ private fun OrganizerCard() {
                 modifier = Modifier
                     .size(52.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF233026))
-                    .border(2.dp, GreenPrimary, CircleShape),
+                    .background(colors.playerBackground)
+                    .border(2.dp, colors.accent, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Organizador",
-                    tint = White,
+                    tint = colors.accent,
                     modifier = Modifier.size(30.dp)
                 )
             }
@@ -423,7 +515,7 @@ private fun OrganizerCard() {
                     text = "Martín G.",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF202020)
+                    color = colors.textPrimary
                 )
 
                 Row(
@@ -431,7 +523,7 @@ private fun OrganizerCard() {
                 ) {
                     Text(
                         text = "★",
-                        color = GreenPrimary,
+                        color = colors.accent,
                         fontSize = 16.sp
                     )
 
@@ -439,7 +531,7 @@ private fun OrganizerCard() {
 
                     Text(
                         text = "4.8 (12 partidos)",
-                        color = Color(0xFF4F574C),
+                        color = colors.textSecondary,
                         fontSize = 15.sp
                     )
                 }
@@ -449,26 +541,30 @@ private fun OrganizerCard() {
 }
 
 @Composable
-private fun MeetingDetailsCard(match: MockMatch) {
-    DetailSectionCard {
+private fun MeetingDetailsCard(
+    match: MockMatch,
+    colors: MatchDetailColors
+) {
+    DetailSectionCard(colors = colors) {
         Text(
             text = "Detalles del Encuentro",
             fontSize = 21.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF202020)
+            color = colors.textPrimary
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        HorizontalDivider(color = Color(0xFFE0E0E0))
+        HorizontalDivider(color = colors.divider)
 
         Spacer(modifier = Modifier.height(16.dp))
 
         DetailInfoRow(
+            colors = colors,
             icon = {
                 SurfaceGrassIcon(
                     modifier = Modifier.size(28.dp),
-                    color = GreenPrimary
+                    color = colors.accent
                 )
             },
             title = "Superficie",
@@ -478,11 +574,12 @@ private fun MeetingDetailsCard(match: MockMatch) {
         Spacer(modifier = Modifier.height(16.dp))
 
         DetailInfoRow(
+            colors = colors,
             icon = {
                 Text(
                     text = "♙",
                     fontSize = 24.sp,
-                    color = GreenPrimary
+                    color = colors.accent
                 )
             },
             title = "Nivel sugerido",
@@ -492,11 +589,12 @@ private fun MeetingDetailsCard(match: MockMatch) {
         Spacer(modifier = Modifier.height(16.dp))
 
         DetailInfoRow(
+            colors = colors,
             icon = {
                 Text(
                     text = "✓",
                     fontSize = 24.sp,
-                    color = GreenPrimary
+                    color = colors.accent
                 )
             },
             title = "Incluye",
@@ -507,6 +605,7 @@ private fun MeetingDetailsCard(match: MockMatch) {
 
 @Composable
 private fun DetailInfoRow(
+    colors: MatchDetailColors,
     icon: @Composable () -> Unit,
     title: String,
     description: String
@@ -526,13 +625,13 @@ private fun DetailInfoRow(
                 text = title,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF202020)
+                color = colors.textPrimary
             )
 
             Text(
                 text = description,
                 fontSize = 15.sp,
-                color = Color(0xFF4F574C),
+                color = colors.textSecondary,
                 lineHeight = 20.sp
             )
         }
@@ -540,37 +639,42 @@ private fun DetailInfoRow(
 }
 
 @Composable
-private fun RulesCard() {
-    DetailSectionCard {
+private fun RulesCard(
+    colors: MatchDetailColors
+) {
+    DetailSectionCard(colors = colors) {
         Text(
             text = "Reglas",
             fontSize = 21.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF202020)
+            color = colors.textPrimary
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        HorizontalDivider(color = Color(0xFFE0E0E0))
+        HorizontalDivider(color = colors.divider)
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        RuleItem("Llegar 15 min antes.")
-        RuleItem("Confirmación obligatoria 24hs antes.")
-        RuleItem("Se juega con lluvia leve, se suspende por\ntormenta.")
-        RuleItem("Buena onda, cero mala leche.")
+        RuleItem("Llegar 15 min antes.", colors)
+        RuleItem("Confirmación obligatoria 24hs antes.", colors)
+        RuleItem("Se juega con lluvia leve, se suspende por\ntormenta.", colors)
+        RuleItem("Buena onda, cero mala leche.", colors)
     }
 }
 
 @Composable
-private fun RuleItem(text: String) {
+private fun RuleItem(
+    text: String,
+    colors: MatchDetailColors
+) {
     Row(
         modifier = Modifier.padding(bottom = 12.dp),
         verticalAlignment = Alignment.Top
     ) {
         Text(
             text = "•",
-            color = GreenPrimary,
+            color = colors.accent,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.width(18.dp)
@@ -579,18 +683,21 @@ private fun RuleItem(text: String) {
         Text(
             text = text,
             fontSize = 15.sp,
-            color = Color(0xFF4F574C),
+            color = colors.textSecondary,
             lineHeight = 20.sp
         )
     }
 }
 
 @Composable
-private fun ConfirmedPlayersCard(match: MockMatch) {
+private fun ConfirmedPlayersCard(
+    match: MockMatch,
+    colors: MatchDetailColors
+) {
     val currentPlayers = getCurrentPlayers(match.players)
     val maxPlayers = getMaxPlayers(match.players)
 
-    DetailSectionCard {
+    DetailSectionCard(colors = colors) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -599,17 +706,17 @@ private fun ConfirmedPlayersCard(match: MockMatch) {
                 text = "Jugadores Confirmados",
                 fontSize = 21.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF202020),
+                color = colors.textPrimary,
                 modifier = Modifier.weight(1f)
             )
 
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                color = Color(0xFFE4E4E4)
+                color = colors.innerCard
             ) {
                 Text(
                     text = "$currentPlayers / $maxPlayers",
-                    color = GreenPrimary,
+                    color = colors.accent,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
@@ -626,22 +733,22 @@ private fun ConfirmedPlayersCard(match: MockMatch) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                PlayerSlot(name = "Martín", active = true, organizer = true)
-                PlayerSlot(name = "Leo M.", active = true)
-                PlayerSlot(name = "Alej.", active = true, letter = "A")
-                PlayerSlot(name = "Nico", active = true)
-                PlayerSlot(name = "Fede", active = true)
+                PlayerSlot(name = "Martín", active = true, organizer = true, colors = colors)
+                PlayerSlot(name = "Leo M.", active = true, colors = colors)
+                PlayerSlot(name = "Alej.", active = true, letter = "A", colors = colors)
+                PlayerSlot(name = "Nico", active = true, colors = colors)
+                PlayerSlot(name = "Fede", active = true, colors = colors)
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                PlayerSlot(name = "Tomi", active = true)
-                PlayerSlot(name = "Juan", active = true)
-                PlayerSlot(name = "Lucas", active = true)
-                PlayerSlot(name = "Libre", active = false)
-                PlayerSlot(name = "Libre", active = false)
+                PlayerSlot(name = "Tomi", active = true, colors = colors)
+                PlayerSlot(name = "Juan", active = true, colors = colors)
+                PlayerSlot(name = "Lucas", active = true, colors = colors)
+                PlayerSlot(name = "Libre", active = false, colors = colors)
+                PlayerSlot(name = "Libre", active = false, colors = colors)
             }
         }
     }
@@ -651,6 +758,7 @@ private fun ConfirmedPlayersCard(match: MockMatch) {
 private fun PlayerSlot(
     name: String,
     active: Boolean,
+    colors: MatchDetailColors,
     organizer: Boolean = false,
     letter: String? = null
 ) {
@@ -663,13 +771,13 @@ private fun PlayerSlot(
                 .size(42.dp)
                 .clip(CircleShape)
                 .background(
-                    if (active) Color(0xFFE9E7E7) else Color.Transparent
+                    if (active) colors.playerBackground else Color.Transparent
                 )
                 .then(
                     if (organizer) {
-                        Modifier.border(2.dp, GreenPrimary, CircleShape)
+                        Modifier.border(2.dp, colors.accent, CircleShape)
                     } else if (!active) {
-                        Modifier.border(1.dp, Color(0xFFBFC6BC), CircleShape)
+                        Modifier.border(1.dp, colors.playerInactiveBorder, CircleShape)
                     } else {
                         Modifier
                     }
@@ -681,7 +789,7 @@ private fun PlayerSlot(
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = name,
-                        tint = GreenPrimary,
+                        tint = colors.accent,
                         modifier = Modifier.size(24.dp)
                     )
                 }
@@ -691,7 +799,7 @@ private fun PlayerSlot(
                         text = letter,
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6C6C6C)
+                        color = colors.textMuted
                     )
                 }
 
@@ -699,7 +807,7 @@ private fun PlayerSlot(
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = name,
-                        tint = Color(0xFF777777),
+                        tint = colors.textMuted,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -708,7 +816,7 @@ private fun PlayerSlot(
                     Text(
                         text = "+",
                         fontSize = 20.sp,
-                        color = Color(0xFFBFC6BC)
+                        color = colors.playerInactiveBorder
                     )
                 }
             }
@@ -716,11 +824,11 @@ private fun PlayerSlot(
             if (organizer) {
                 Text(
                     text = "★",
-                    color = GreenPrimary,
+                    color = colors.accent,
                     fontSize = 12.sp,
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
-                        .background(Color(0xFFE9E7E7), CircleShape)
+                        .background(colors.playerBackground, CircleShape)
                 )
             }
         }
@@ -732,9 +840,9 @@ private fun PlayerSlot(
             fontSize = 12.sp,
             fontWeight = if (organizer) FontWeight.Bold else FontWeight.Normal,
             color = if (active) {
-                if (organizer) GreenPrimary else Color(0xFF4F574C)
+                if (organizer) colors.accent else colors.textSecondary
             } else {
-                Color(0xFFBFC6BC)
+                colors.playerInactiveBorder
             },
             maxLines = 1
         )
@@ -743,13 +851,14 @@ private fun PlayerSlot(
 
 @Composable
 private fun DetailSectionCard(
+    colors: MatchDetailColors,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF1EFEF)
+            containerColor = colors.card
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -760,28 +869,32 @@ private fun DetailSectionCard(
     }
 }
 
-
-
-
-
 @Composable
 private fun FinishedMatchContent(
     match: FinishedMatchDetail,
+    colors: MatchDetailColors,
     modifier: Modifier = Modifier,
     onStatisticsClick: (String) -> Unit
-){
+) {
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(colors.background)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp, vertical = 18.dp)
             .semantics { contentDescription = "Detalle del partido finalizado" }
     ) {
-        FinishedMatchHeroCard(match = match)
+        FinishedMatchHeroCard(
+            match = match,
+            colors = colors
+        )
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        FinishedOrganizerCard(match = match)
+        FinishedOrganizerCard(
+            match = match,
+            colors = colors
+        )
 
         Spacer(modifier = Modifier.height(18.dp))
 
@@ -791,10 +904,11 @@ private fun FinishedMatchContent(
         ) {
             FinishedInfoCard(
                 modifier = Modifier.weight(1f),
+                colors = colors,
                 icon = {
                     SurfaceGrassIcon(
                         modifier = Modifier.size(28.dp),
-                        color = GreenPrimary
+                        color = colors.accent
                     )
                 },
                 title = "SUPERFICIE",
@@ -803,12 +917,13 @@ private fun FinishedMatchContent(
 
             FinishedInfoCard(
                 modifier = Modifier.weight(1f),
+                colors = colors,
                 icon = {
                     Text(
                         text = "★",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
-                        color = GreenPrimary
+                        color = colors.accent
                     )
                 },
                 title = "NIVEL",
@@ -818,7 +933,10 @@ private fun FinishedMatchContent(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        FinishedPlayersCard(match = match)
+        FinishedPlayersCard(
+            match = match,
+            colors = colors
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -831,8 +949,8 @@ private fun FinishedMatchContent(
                 .height(52.dp),
             shape = RoundedCornerShape(26.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = GreenPrimary,
-                contentColor = White
+                containerColor = colors.accent,
+                contentColor = colors.accentText
             )
         ) {
             Row(
@@ -840,7 +958,7 @@ private fun FinishedMatchContent(
             ) {
                 StatsBarsIcon(
                     modifier = Modifier.size(20.dp),
-                    color = White
+                    color = colors.accentText
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -859,13 +977,14 @@ private fun FinishedMatchContent(
 
 @Composable
 private fun FinishedMatchHeroCard(
-    match: FinishedMatchDetail
+    match: FinishedMatchDetail,
+    colors: MatchDetailColors
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFF1EFEF)
+            containerColor = colors.card
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -882,7 +1001,7 @@ private fun FinishedMatchHeroCard(
                         text = match.title,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF202020),
+                        color = colors.textPrimary,
                         lineHeight = 31.sp
                     )
 
@@ -894,7 +1013,7 @@ private fun FinishedMatchHeroCard(
                         Icon(
                             imageVector = Icons.Default.Place,
                             contentDescription = "Ubicación",
-                            tint = Color(0xFF4F574C),
+                            tint = colors.textSecondary,
                             modifier = Modifier.size(17.dp)
                         )
 
@@ -903,21 +1022,21 @@ private fun FinishedMatchHeroCard(
                         Text(
                             text = match.location,
                             fontSize = 14.sp,
-                            color = Color(0xFF4F574C)
+                            color = colors.textSecondary
                         )
                     }
                 }
 
                 Surface(
                     shape = RoundedCornerShape(18.dp),
-                    color = Color(0xFFE5E5E5),
-                    border = BorderStroke(1.dp, Color(0xFFCFCFCF))
+                    color = colors.innerCard,
+                    border = BorderStroke(1.dp, colors.divider)
                 ) {
                     Text(
                         text = "FINALIZADO",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6F6F6F),
+                        color = colors.textMuted,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                     )
                 }
@@ -928,7 +1047,7 @@ private fun FinishedMatchHeroCard(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-                color = Color(0xFFEDEBEB)
+                color = colors.innerCard
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
@@ -943,7 +1062,7 @@ private fun FinishedMatchHeroCard(
                             Icon(
                                 imageVector = Icons.Default.DateRange,
                                 contentDescription = "Fecha",
-                                tint = Color(0xFF4F574C),
+                                tint = colors.textSecondary,
                                 modifier = Modifier.size(16.dp)
                             )
 
@@ -952,7 +1071,7 @@ private fun FinishedMatchHeroCard(
                             Text(
                                 text = match.date,
                                 fontSize = 12.sp,
-                                color = Color(0xFF4F574C)
+                                color = colors.textSecondary
                             )
                         }
 
@@ -964,7 +1083,7 @@ private fun FinishedMatchHeroCard(
                             Icon(
                                 imageVector = Icons.Default.AccessTime,
                                 contentDescription = "Hora",
-                                tint = Color(0xFF4F574C),
+                                tint = colors.textSecondary,
                                 modifier = Modifier.size(18.dp)
                             )
 
@@ -974,7 +1093,7 @@ private fun FinishedMatchHeroCard(
                                 text = match.time,
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF202020),
+                                color = colors.textPrimary,
                                 lineHeight = 22.sp
                             )
                         }
@@ -985,7 +1104,7 @@ private fun FinishedMatchHeroCard(
                     Surface(
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(8.dp),
-                        color = Color.White
+                        color = colors.background
                     ) {
                         Column(
                             modifier = Modifier.padding(vertical = 10.dp),
@@ -995,7 +1114,7 @@ private fun FinishedMatchHeroCard(
                                 text = "RESULTADO",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF6F6F6F)
+                                color = colors.textMuted
                             )
 
                             Spacer(modifier = Modifier.height(4.dp))
@@ -1007,21 +1126,21 @@ private fun FinishedMatchHeroCard(
                                     text = match.resultHome,
                                     fontSize = 42.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = GreenPrimary
+                                    color = colors.accent
                                 )
 
                                 Text(
                                     text = " - ",
                                     fontSize = 28.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF9A9A9A)
+                                    color = colors.textMuted
                                 )
 
                                 Text(
                                     text = match.resultAway,
                                     fontSize = 42.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF3F473F)
+                                    color = colors.textPrimary
                                 )
                             }
                         }
@@ -1034,13 +1153,14 @@ private fun FinishedMatchHeroCard(
 
 @Composable
 private fun FinishedOrganizerCard(
-    match: FinishedMatchDetail
+    match: FinishedMatchDetail,
+    colors: MatchDetailColors
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = colors.card
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -1052,14 +1172,14 @@ private fun FinishedOrganizerCard(
                 modifier = Modifier
                     .size(46.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE9E7E7))
-                    .border(2.dp, GreenPrimary, CircleShape),
+                    .background(colors.playerBackground)
+                    .border(2.dp, colors.accent, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Organizador",
-                    tint = GreenPrimary,
+                    tint = colors.accent,
                     modifier = Modifier.size(28.dp)
                 )
             }
@@ -1073,14 +1193,14 @@ private fun FinishedOrganizerCard(
                     text = "ORGANIZADOR",
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF6F6F6F)
+                    color = colors.textMuted
                 )
 
                 Text(
                     text = match.organizerName,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF202020)
+                    color = colors.textPrimary
                 )
             }
 
@@ -1091,13 +1211,13 @@ private fun FinishedOrganizerCard(
                     text = "★ ${match.rating}",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
-                    color = GreenPrimary
+                    color = colors.accent
                 )
 
                 Text(
                     text = match.ratingDescription,
                     fontSize = 12.sp,
-                    color = Color(0xFF4F574C)
+                    color = colors.textSecondary
                 )
             }
         }
@@ -1107,6 +1227,7 @@ private fun FinishedOrganizerCard(
 @Composable
 private fun FinishedInfoCard(
     modifier: Modifier = Modifier,
+    colors: MatchDetailColors,
     icon: @Composable () -> Unit,
     title: String,
     description: String
@@ -1115,7 +1236,7 @@ private fun FinishedInfoCard(
         modifier = modifier.height(126.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = colors.card
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -1130,7 +1251,7 @@ private fun FinishedInfoCard(
                 text = title,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF6F6F6F)
+                color = colors.textMuted
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -1138,7 +1259,7 @@ private fun FinishedInfoCard(
             Text(
                 text = description,
                 fontSize = 16.sp,
-                color = Color(0xFF202020),
+                color = colors.textPrimary,
                 lineHeight = 20.sp
             )
         }
@@ -1147,13 +1268,14 @@ private fun FinishedInfoCard(
 
 @Composable
 private fun FinishedPlayersCard(
-    match: FinishedMatchDetail
+    match: FinishedMatchDetail,
+    colors: MatchDetailColors
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = colors.card
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -1167,19 +1289,19 @@ private fun FinishedPlayersCard(
                     text = "👥  Jugadores",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFF202020),
+                    color = colors.textPrimary,
                     modifier = Modifier.weight(1f)
                 )
 
                 Surface(
                     shape = RoundedCornerShape(18.dp),
-                    color = Color(0xFFE5E5E5)
+                    color = colors.innerCard
                 ) {
                     Text(
                         text = "${match.players} Confirmados",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6F6F6F),
+                        color = colors.textMuted,
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                     )
                 }
@@ -1191,11 +1313,11 @@ private fun FinishedPlayersCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                PlayerSlot(name = "Juan P.", active = true, organizer = true)
-                PlayerSlot(name = "Matías", active = true)
-                PlayerSlot(name = "Sofi", active = true, letter = "S")
-                PlayerSlot(name = "Marcos", active = true, letter = "M")
-                PlayerSlot(name = "Fede", active = true)
+                PlayerSlot(name = "Juan P.", active = true, organizer = true, colors = colors)
+                PlayerSlot(name = "Matías", active = true, colors = colors)
+                PlayerSlot(name = "Sofi", active = true, letter = "S", colors = colors)
+                PlayerSlot(name = "Marcos", active = true, letter = "M", colors = colors)
+                PlayerSlot(name = "Fede", active = true, colors = colors)
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -1204,11 +1326,11 @@ private fun FinishedPlayersCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                PlayerSlot(name = "Lucas", active = true)
-                PlayerSlot(name = "Gastón", active = true, letter = "G")
-                PlayerSlot(name = "Pablo", active = true)
-                PlayerSlot(name = "Nico", active = true)
-                PlayerSlot(name = "Ezequiel", active = true, letter = "E")
+                PlayerSlot(name = "Lucas", active = true, colors = colors)
+                PlayerSlot(name = "Gastón", active = true, letter = "G", colors = colors)
+                PlayerSlot(name = "Pablo", active = true, colors = colors)
+                PlayerSlot(name = "Nico", active = true, colors = colors)
+                PlayerSlot(name = "Ezequiel", active = true, letter = "E", colors = colors)
             }
         }
     }
@@ -1218,13 +1340,14 @@ private fun FinishedPlayersCard(
 private fun BottomMatchActionButton(
     isUserJoined: Boolean,
     isOrganizer: Boolean,
+    colors: MatchDetailColors,
     onJoinClick: () -> Unit,
     onLeaveClick: () -> Unit,
     onEditClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = Color(0xFFFAF9F8),
+        color = colors.bottomBar,
         shadowElevation = 8.dp
     ) {
         Column(
@@ -1246,8 +1369,8 @@ private fun BottomMatchActionButton(
                         .height(52.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GreenPrimary,
-                        contentColor = White
+                        containerColor = colors.accent,
+                        contentColor = colors.accentText
                     )
                 ) {
                     Text(
@@ -1262,7 +1385,7 @@ private fun BottomMatchActionButton(
                 Text(
                     text = "Solo el organizador puede modificar o cancelar este partido.",
                     fontSize = 13.sp,
-                    color = Color(0xFF6F6F6F),
+                    color = colors.textMuted,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1273,9 +1396,9 @@ private fun BottomMatchActionButton(
                         .fillMaxWidth()
                         .height(52.dp),
                     shape = RoundedCornerShape(24.dp),
-                    border = BorderStroke(1.dp, Color(0xFFD32F2F)),
+                    border = BorderStroke(1.dp, colors.danger),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFD32F2F)
+                        contentColor = colors.danger
                     )
                 ) {
                     Text(
@@ -1290,7 +1413,7 @@ private fun BottomMatchActionButton(
                 Text(
                     text = "Se liberará tu cupo y el organizador será notificado.",
                     fontSize = 13.sp,
-                    color = Color(0xFF6F6F6F),
+                    color = colors.textMuted,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1302,8 +1425,8 @@ private fun BottomMatchActionButton(
                         .height(52.dp),
                     shape = RoundedCornerShape(24.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = GreenPrimary,
-                        contentColor = White
+                        containerColor = colors.accent,
+                        contentColor = colors.accentText
                     )
                 ) {
                     Text(
@@ -1398,6 +1521,7 @@ private fun SurfaceGrassIcon(
         )
     }
 }
+
 @Composable
 private fun StatsBarsIcon(
     modifier: Modifier = Modifier,
@@ -1429,6 +1553,7 @@ private fun StatsBarsIcon(
         )
     }
 }
+
 private fun getCurrentPlayers(players: String): Int {
     return players.substringBefore("/")
         .trim()

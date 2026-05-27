@@ -21,7 +21,11 @@ import com.matchball.fulbomatch.ui.screens.RegisterScreen
 import com.matchball.fulbomatch.ui.screens.StatisticsScreen
 
 @Composable
-fun NavGraph(navController: NavHostController) {
+fun NavGraph(
+    navController: NavHostController,
+    isDarkMode: Boolean,
+    onToggleDarkMode: () -> Unit
+) {
     NavHost(
         navController = navController,
         startDestination = Routes.Onboarding.route
@@ -81,6 +85,8 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Routes.Home.route) {
             HomeScreen(
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onMatchClick = { matchId ->
                     navController.navigate(
                         "${Routes.MatchDetail.createRoute(matchId)}?isUserJoined=false&isOrganizer=false&isFinished=false"
@@ -105,6 +111,8 @@ fun NavGraph(navController: NavHostController) {
 
         composable(Routes.Matches.route) {
             MatchesScreen(
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onHomeClick = {
                     navController.navigate(Routes.Home.route) {
                         launchSingleTop = true
@@ -162,6 +170,8 @@ fun NavGraph(navController: NavHostController) {
                 isUserJoined = isUserJoined,
                 isOrganizer = isOrganizer,
                 isFinished = isFinished,
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onBackClick = {
                     navController.popBackStack()
                 },
