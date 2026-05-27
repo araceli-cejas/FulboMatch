@@ -397,6 +397,8 @@ fun NavGraph(
 
         composable(Routes.Notifications.route) {
             NotificationsScreen(
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onBackClick = {
                     navController.popBackStack()
                 },

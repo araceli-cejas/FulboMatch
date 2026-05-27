@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,7 +25,6 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
-import androidx.compose.material.icons.filled.SportsSoccer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,16 +44,61 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
+import androidx.compose.foundation.clickable
 
+private data class NotificationsColors(
+    val background: Color,
+    val cardBackground: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val headerIcon: Color,
+    val accent: Color,
+    val accentText: Color,
+    val dangerRed: Color,
+    val dangerSoft: Color,
+    val warningOrange: Color,
+    val warningDark: Color,
+    val bottomBarBackground: Color,
+    val bottomIcon: Color
+)
 
-private val NotificationsBackground = Color(0xFFFAF9F8)
-private val TextDark = Color(0xFF202020)
-private val TextSoft = Color(0xFF4F574C)
-private val DangerRed = Color(0xFFC62828)
-private val DangerSoft = Color(0xFFFFD6D6)
-private val WarningOrange = Color(0xFFFFB86C)
-private val WarningDark = Color(0xFF8A5A14)
+private fun notificationsColors(isDarkMode: Boolean): NotificationsColors {
+    return if (isDarkMode) {
+        NotificationsColors(
+            background = Color(0xFF111111),
+            cardBackground = Color(0xFF1A1A1A),
+            textPrimary = Color(0xFFEDEDED),
+            textSecondary = Color(0xFFBDBDBD),
+            headerIcon = Color(0xFFC9D1C9),
+            accent = Color(0xFF9EF49B),
+            accentText = Color(0xFF111111),
+            dangerRed = Color(0xFFFF6B6B),
+            dangerSoft = Color(0xFF3A1F1F),
+            warningOrange = Color(0xFFFFB86C),
+            warningDark = Color(0xFF111111),
+            bottomBarBackground = Color(0xFF151515),
+            bottomIcon = Color(0xFFC9D1C9)
+        )
+    } else {
+        NotificationsColors(
+            background = Color(0xFFFAF9F8),
+            cardBackground = Color.White,
+            textPrimary = Color(0xFF202020),
+            textSecondary = Color(0xFF4F574C),
+            headerIcon = GreenPrimary,
+            accent = GreenPrimary,
+            accentText = Color.White,
+            dangerRed = Color(0xFFC62828),
+            dangerSoft = Color(0xFFFFD6D6),
+            warningOrange = Color(0xFFFFB86C),
+            warningDark = Color(0xFF8A5A14),
+            bottomBarBackground = Color(0xFFFAF9F8),
+            bottomIcon = Color(0xFF4F574C)
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,15 +107,19 @@ fun NotificationsScreen(
     onHomeClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onCreateClick: () -> Unit,
-    onProfileClick: () -> Unit
+    onProfileClick: () -> Unit,
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {}
 ) {
+    val colors = notificationsColors(isDarkMode)
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
                         text = "Notificaciones",
-                        color = GreenPrimary,
+                        color = colors.textPrimary,
                         fontSize = 23.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -82,28 +129,37 @@ fun NotificationsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
-                            tint = Color.Black
+                            tint = colors.headerIcon
                         )
                     }
                 },
+                actions = {
+                    MoonIconButton(
+                        isDarkMode = isDarkMode,
+                        iconColor = colors.headerIcon,
+                        onClick = onToggleDarkMode
+                    )
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = NotificationsBackground
+                    containerColor = colors.background
                 )
             )
         },
         bottomBar = {
             NotificationsBottomBar(
+                colors = colors,
                 onHomeClick = onHomeClick,
                 onMatchesClick = onMatchesClick,
                 onCreateClick = onCreateClick,
                 onProfileClick = onProfileClick
             )
         },
-        containerColor = NotificationsBackground
+        containerColor = colors.background
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(colors.background)
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 14.dp),
@@ -114,8 +170,9 @@ fun NotificationsScreen(
                 description = "El organizador realizó cambios en el partido del domingo.",
                 time = "Hace 2 min",
                 icon = Icons.Default.EditCalendar,
-                iconTint = Color.White,
-                iconBackground = GreenPrimary
+                iconTint = colors.accentText,
+                iconBackground = colors.accent,
+                colors = colors
             )
 
             NotificationCard(
@@ -123,8 +180,9 @@ fun NotificationsScreen(
                 description = "Martín se sumó a tu partido.",
                 time = "Hace 2 min",
                 icon = Icons.Default.PersonAdd,
-                iconTint = Color.White,
-                iconBackground = GreenPrimary
+                iconTint = colors.accentText,
+                iconBackground = colors.accent,
+                colors = colors
             )
 
             NotificationCard(
@@ -132,8 +190,9 @@ fun NotificationsScreen(
                 description = "El organizador canceló el partido del sábado.",
                 time = "Hace 1 h",
                 icon = Icons.Default.EventBusy,
-                iconTint = DangerRed,
-                iconBackground = DangerSoft
+                iconTint = colors.dangerRed,
+                iconBackground = colors.dangerSoft,
+                colors = colors
             )
 
             NotificationCard(
@@ -141,8 +200,9 @@ fun NotificationsScreen(
                 description = "Un jugador se bajó de tu partido del domingo.",
                 time = "Hace 1 h",
                 icon = Icons.Default.PersonRemove,
-                iconTint = WarningDark,
-                iconBackground = WarningOrange
+                iconTint = colors.warningDark,
+                iconBackground = colors.warningOrange,
+                colors = colors
             )
         }
     }
@@ -155,13 +215,14 @@ private fun NotificationCard(
     time: String,
     icon: ImageVector,
     iconTint: Color,
-    iconBackground: Color
+    iconBackground: Color,
+    colors: NotificationsColors
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(11.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -195,7 +256,7 @@ private fun NotificationCard(
                     text = title,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    color = TextDark,
+                    color = colors.textPrimary,
                     lineHeight = 24.sp
                 )
 
@@ -204,7 +265,7 @@ private fun NotificationCard(
                 Text(
                     text = description,
                     fontSize = 15.sp,
-                    color = TextSoft,
+                    color = colors.textSecondary,
                     lineHeight = 21.sp
                 )
             }
@@ -214,7 +275,7 @@ private fun NotificationCard(
             Text(
                 text = time,
                 fontSize = 12.sp,
-                color = TextSoft
+                color = colors.textSecondary
             )
         }
     }
@@ -222,49 +283,53 @@ private fun NotificationCard(
 
 @Composable
 private fun NotificationsBottomBar(
+    colors: NotificationsColors,
     onHomeClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onCreateClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = NotificationsBackground,
-        shadowElevation = 8.dp
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(18.dp),
+        color = colors.bottomBarBackground,
+        tonalElevation = 4.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 24.dp, vertical = 10.dp),
+                .height(84.dp)
+                .padding(horizontal = 14.dp, vertical = 10.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BottomItem(
+            UnselectedBottomItem(
                 icon = Icons.Default.Home,
                 label = "Inicio",
-                selected = false,
+                colors = colors,
                 onClick = onHomeClick
             )
 
-            BottomItem(
-                icon = Icons.Default.SportsSoccer,
+            UnselectedBottomItem(
+                iconText = "⚽",
                 label = "Partidos",
-                selected = false,
+                colors = colors,
                 onClick = onMatchesClick
             )
 
-            BottomItem(
+            UnselectedBottomItem(
                 icon = Icons.Default.Add,
                 label = "Crear",
-                selected = false,
+                colors = colors,
                 onClick = onCreateClick
             )
 
-            BottomItem(
+            UnselectedBottomItem(
                 icon = Icons.Default.Person,
                 label = "Perfil",
-                selected = false,
+                colors = colors,
                 onClick = onProfileClick
             )
         }
@@ -272,43 +337,66 @@ private fun NotificationsBottomBar(
 }
 
 @Composable
-private fun BottomItem(
+private fun UnselectedBottomItem(
     icon: ImageVector,
     label: String,
-    selected: Boolean,
+    colors: NotificationsColors,
     onClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier.width(64.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier = Modifier
+            .width(64.dp)
+            .height(64.dp)
+            .clickable { onClick() },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Surface(
-            onClick = onClick,
-            shape = RoundedCornerShape(28.dp),
-            color = if (selected) GreenPrimary else Color.Transparent,
-            modifier = Modifier
-                .height(38.dp)
-                .width(if (selected) 70.dp else 44.dp)
-        ) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = label,
-                    tint = if (selected) Color.White else TextSoft,
-                    modifier = Modifier.size(23.dp)
-                )
-            }
-        }
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            tint = colors.bottomIcon,
+            modifier = Modifier.size(26.dp)
+        )
 
-        Spacer(modifier = Modifier.height(3.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = label,
-            fontSize = 11.sp,
-            color = TextSoft
+            color = colors.bottomIcon,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun UnselectedBottomItem(
+    iconText: String,
+    label: String,
+    colors: NotificationsColors,
+    onClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .width(64.dp)
+            .height(64.dp)
+            .clickable { onClick() },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = iconText,
+            fontSize = 24.sp,
+            color = colors.bottomIcon
+        )
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = label,
+            color = colors.bottomIcon,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium
         )
     }
 }
