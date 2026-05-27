@@ -327,6 +327,8 @@ fun NavGraph(
 
         composable(Routes.Profile.route) {
             ProfileScreen(
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onBackClick = {
                     navController.popBackStack()
                 },
@@ -368,6 +370,8 @@ fun NavGraph(
 
         composable(Routes.EditProfile.route) {
             EditProfileScreen(
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onBackClick = {
                     navController.popBackStack()
                 },

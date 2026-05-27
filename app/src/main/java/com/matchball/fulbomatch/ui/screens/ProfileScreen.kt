@@ -49,9 +49,78 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
-import com.matchball.fulbomatch.ui.theme.GreenPrimary
-import com.matchball.fulbomatch.ui.theme.White
 import com.matchball.fulbomatch.ui.components.MoonIconButton
+import com.matchball.fulbomatch.ui.theme.GreenPrimary
+
+private data class ProfileColors(
+    val background: Color,
+    val cardBackground: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color,
+    val headerIcon: Color,
+    val icon: Color,
+    val accent: Color,
+    val accentText: Color,
+    val chipBackground: Color,
+    val avatarBackground: Color,
+    val circleIconBackground: Color,
+    val divider: Color,
+    val logoutBackground: Color,
+    val logoutIconBackground: Color,
+    val danger: Color,
+    val bottomBarBackground: Color,
+    val bottomIcon: Color,
+    val selectedBottomIcon: Color
+)
+
+private fun profileColors(isDarkMode: Boolean): ProfileColors {
+    return if (isDarkMode) {
+        ProfileColors(
+            background = Color(0xFF111111),
+            cardBackground = Color(0xFF1A1A1A),
+            textPrimary = Color(0xFFEDEDED),
+            textSecondary = Color(0xFFBDBDBD),
+            textMuted = Color(0xFF9E9E9E),
+            headerIcon = Color(0xFFC9D1C9),
+            icon = Color(0xFFC9D1C9),
+            accent = Color(0xFF9EF49B),
+            accentText = Color(0xFF111111),
+            chipBackground = Color(0xFF2A2A2A),
+            avatarBackground = Color(0xFF22302B),
+            circleIconBackground = Color(0xFF2A2A2A),
+            divider = Color(0xFF2A2A2A),
+            logoutBackground = Color(0xFF3A1F1F),
+            logoutIconBackground = Color(0xFF4A2A2A),
+            danger = Color(0xFFFF6B6B),
+            bottomBarBackground = Color(0xFF151515),
+            bottomIcon = Color(0xFFC9D1C9),
+            selectedBottomIcon = Color(0xFF111111)
+        )
+    } else {
+        ProfileColors(
+            background = Color(0xFFF6F6F6),
+            cardBackground = Color.White,
+            textPrimary = Color(0xFF202020),
+            textSecondary = Color(0xFF444444),
+            textMuted = Color(0xFF333333),
+            headerIcon = GreenPrimary,
+            icon = Color(0xFF6A6F66),
+            accent = GreenPrimary,
+            accentText = Color(0xFFBDE8B9),
+            chipBackground = Color(0xFFEDEDED),
+            avatarBackground = Color(0xFFEDEDED),
+            circleIconBackground = Color(0xFFE4E4E4),
+            divider = Color(0xFFE0E0E0),
+            logoutBackground = Color(0xFFFFD6D6),
+            logoutIconBackground = Color(0xFFFFEEEE),
+            danger = Color(0xFFC62828),
+            bottomBarBackground = Color(0xFFF3F1F1),
+            bottomIcon = Color(0xFF4F574C),
+            selectedBottomIcon = Color(0xFFBDE8B9)
+        )
+    }
+}
 
 @Composable
 fun ProfileScreen(
@@ -62,35 +131,43 @@ fun ProfileScreen(
     onEditProfileClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    onDeleteAccountClick: () -> Unit = {}
-){
+    onDeleteAccountClick: () -> Unit = {},
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {}
+) {
+    val colors = profileColors(isDarkMode)
+
     Scaffold(
         bottomBar = {
             ProfileBottomBar(
+                colors = colors,
                 onHomeClick = onHomeClick,
                 onMatchesClick = onMatchesClick,
                 onCreateMatchClick = onCreateMatchClick
             )
         },
-        containerColor = Color(0xFFF6F6F6)
+        containerColor = colors.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF6F6F6))
+                .background(colors.background)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp, vertical = 12.dp)
                 .semantics { contentDescription = "Pantalla de perfil de usuario" },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ProfileHeader(
+                colors = colors,
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onNotificationsClick = onNotificationsClick
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            ProfileAvatar()
+            ProfileAvatar(colors = colors)
 
             Spacer(modifier = Modifier.height(18.dp))
 
@@ -98,22 +175,23 @@ fun ProfileScreen(
                 text = "Lucas Fernández",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF202020)
+                color = colors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            ProfileUserInfo()
+            ProfileUserInfo(colors = colors)
 
             Spacer(modifier = Modifier.height(30.dp))
 
-            ProfileStatsRow()
+            ProfileStatsRow(colors = colors)
 
             Spacer(modifier = Modifier.height(28.dp))
 
             ProfileOptionCard(
                 icon = Icons.Default.Person,
                 title = "Editar perfil",
+                colors = colors,
                 onClick = onEditProfileClick
             )
 
@@ -122,19 +200,21 @@ fun ProfileScreen(
             ProfileOptionCard(
                 iconText = "⚽",
                 title = "Mis partidos",
+                colors = colors,
                 onClick = { onMatchesClick() }
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
             HorizontalDivider(
-                color = Color(0xFFE0E0E0),
+                color = colors.divider,
                 thickness = 1.dp
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
             LogoutButton(
+                colors = colors,
                 onClick = onLogoutClick
             )
 
@@ -142,7 +222,7 @@ fun ProfileScreen(
 
             Text(
                 text = "Eliminar cuenta",
-                color = Color(0xFFE53935),
+                color = colors.danger,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 modifier = Modifier.clickable {
@@ -157,56 +237,71 @@ fun ProfileScreen(
 
 @Composable
 private fun ProfileHeader(
+    colors: ProfileColors,
+    isDarkMode: Boolean,
+    onToggleDarkMode: () -> Unit,
     onNotificationsClick: () -> Unit
 ) {
+    val logoRes = if (isDarkMode) {
+        R.drawable.logo_dark
+    } else {
+        R.drawable.nombre
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFFF6F6F6)),
+            .background(colors.background),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(id = R.drawable.nombre),
+            painter = painterResource(id = logoRes),
             contentDescription = "Logo FulboMatch",
             modifier = Modifier
-                .width(155.dp)
+                .width(190.dp)
                 .height(42.dp),
             contentScale = ContentScale.Fit
         )
 
         Spacer(modifier = Modifier.weight(1f))
 
-        MoonIconButton()
+        MoonIconButton(
+            isDarkMode = isDarkMode,
+            iconColor = colors.headerIcon,
+            onClick = onToggleDarkMode
+        )
 
         IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",
-                tint = GreenPrimary
+                tint = colors.headerIcon
             )
         }
     }
 }
 
 @Composable
-private fun ProfileAvatar() {
+private fun ProfileAvatar(
+    colors: ProfileColors
+) {
     Surface(
         modifier = Modifier.size(112.dp),
         shape = CircleShape,
-        color = Color(0xFFEDEDED),
+        color = colors.avatarBackground,
         shadowElevation = 4.dp
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(CircleShape)
-                .background(GreenPrimary.copy(alpha = 0.12f)),
+                .background(colors.accent.copy(alpha = 0.12f)),
             contentAlignment = Alignment.Center
         ) {
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "Foto de perfil",
-                tint = GreenPrimary,
+                tint = colors.accent,
                 modifier = Modifier.size(58.dp)
             )
         }
@@ -214,19 +309,21 @@ private fun ProfileAvatar() {
 }
 
 @Composable
-private fun ProfileUserInfo() {
+private fun ProfileUserInfo(
+    colors: ProfileColors
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         Surface(
             shape = RoundedCornerShape(6.dp),
-            color = Color(0xFFEDEDED)
+            color = colors.chipBackground
         ) {
             Text(
                 text = "Defensor",
                 fontSize = 13.sp,
-                color = Color(0xFF333333),
+                color = colors.textPrimary,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
             )
         }
@@ -234,26 +331,28 @@ private fun ProfileUserInfo() {
         Text(
             text = "  •  24 años  •  ",
             fontSize = 15.sp,
-            color = Color(0xFF444444)
+            color = colors.textSecondary
         )
 
         Icon(
             imageVector = Icons.Default.Place,
             contentDescription = "Ubicación",
-            tint = Color(0xFF444444),
+            tint = colors.textSecondary,
             modifier = Modifier.size(17.dp)
         )
 
         Text(
             text = "Caballito",
             fontSize = 15.sp,
-            color = Color(0xFF444444)
+            color = colors.textSecondary
         )
     }
 }
 
 @Composable
-private fun ProfileStatsRow() {
+private fun ProfileStatsRow(
+    colors: ProfileColors
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -261,18 +360,21 @@ private fun ProfileStatsRow() {
         ProfileStatCard(
             number = "12",
             label = "PARTIDOS",
+            colors = colors,
             modifier = Modifier.weight(1f)
         )
 
         ProfileStatCard(
             number = "5",
             label = "CREADOS",
+            colors = colors,
             modifier = Modifier.weight(1f)
         )
 
         ProfileStatCard(
             number = "7",
             label = "ANOTADOS",
+            colors = colors,
             modifier = Modifier.weight(1f)
         )
     }
@@ -282,13 +384,14 @@ private fun ProfileStatsRow() {
 private fun ProfileStatCard(
     number: String,
     label: String,
+    colors: ProfileColors,
     modifier: Modifier = Modifier
 ) {
     Card(
         modifier = modifier.height(76.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = White
+            containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -301,7 +404,7 @@ private fun ProfileStatCard(
                 text = number,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
-                color = GreenPrimary
+                color = colors.accent
             )
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -310,7 +413,7 @@ private fun ProfileStatCard(
                 text = label,
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                color = Color(0xFF333333)
+                color = colors.textSecondary
             )
         }
     }
@@ -320,6 +423,7 @@ private fun ProfileStatCard(
 private fun ProfileOptionCard(
     icon: ImageVector,
     title: String,
+    colors: ProfileColors,
     onClick: () -> Unit
 ) {
     Card(
@@ -329,7 +433,7 @@ private fun ProfileOptionCard(
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = White
+            containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -339,11 +443,11 @@ private fun ProfileOptionCard(
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CircleIconContainer {
+            CircleIconContainer(colors = colors) {
                 Icon(
                     imageVector = icon,
                     contentDescription = title,
-                    tint = Color(0xFF6A6F66),
+                    tint = colors.icon,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -353,14 +457,14 @@ private fun ProfileOptionCard(
             Text(
                 text = title,
                 fontSize = 17.sp,
-                color = Color(0xFF222222),
+                color = colors.textPrimary,
                 modifier = Modifier.weight(1f)
             )
 
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Ir a $title",
-                tint = Color(0xFF333333)
+                tint = colors.textSecondary
             )
         }
     }
@@ -370,6 +474,7 @@ private fun ProfileOptionCard(
 private fun ProfileOptionCard(
     iconText: String,
     title: String,
+    colors: ProfileColors,
     onClick: () -> Unit
 ) {
     Card(
@@ -379,7 +484,7 @@ private fun ProfileOptionCard(
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = White
+            containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -389,7 +494,7 @@ private fun ProfileOptionCard(
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            CircleIconContainer {
+            CircleIconContainer(colors = colors) {
                 Text(
                     text = iconText,
                     fontSize = 22.sp
@@ -401,14 +506,14 @@ private fun ProfileOptionCard(
             Text(
                 text = title,
                 fontSize = 17.sp,
-                color = Color(0xFF222222),
+                color = colors.textPrimary,
                 modifier = Modifier.weight(1f)
             )
 
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.NavigateNext,
                 contentDescription = "Ir a $title",
-                tint = Color(0xFF333333)
+                tint = colors.textSecondary
             )
         }
     }
@@ -416,13 +521,14 @@ private fun ProfileOptionCard(
 
 @Composable
 private fun CircleIconContainer(
+    colors: ProfileColors,
     content: @Composable BoxScope.() -> Unit
 ) {
     Box(
         modifier = Modifier
             .size(42.dp)
             .clip(CircleShape)
-            .background(Color(0xFFE4E4E4)),
+            .background(colors.circleIconBackground),
         contentAlignment = Alignment.Center,
         content = content
     )
@@ -430,6 +536,7 @@ private fun CircleIconContainer(
 
 @Composable
 private fun LogoutButton(
+    colors: ProfileColors,
     onClick: () -> Unit
 ) {
     Surface(
@@ -438,7 +545,7 @@ private fun LogoutButton(
             .height(66.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
-        color = Color(0xFFFFD6D6)
+        color = colors.logoutBackground
     ) {
         Row(
             modifier = Modifier
@@ -450,13 +557,13 @@ private fun LogoutButton(
                 modifier = Modifier
                     .size(42.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFFFEEEE)),
+                    .background(colors.logoutIconBackground),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                     contentDescription = "Cerrar sesión",
-                    tint = Color(0xFFC62828),
+                    tint = colors.danger,
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -467,7 +574,7 @@ private fun LogoutButton(
                 text = "Cerrar sesión",
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color(0xFFC62828)
+                color = colors.danger
             )
         }
     }
@@ -475,6 +582,7 @@ private fun LogoutButton(
 
 @Composable
 private fun ProfileBottomBar(
+    colors: ProfileColors,
     onHomeClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onCreateMatchClick: () -> Unit
@@ -484,7 +592,7 @@ private fun ProfileBottomBar(
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp),
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFFF3F1F1),
+        color = colors.bottomBarBackground,
         tonalElevation = 4.dp
     ) {
         Row(
@@ -498,24 +606,28 @@ private fun ProfileBottomBar(
             UnselectedBottomItem(
                 icon = Icons.Default.Home,
                 label = "Inicio",
+                colors = colors,
                 onClick = onHomeClick
             )
 
             UnselectedBottomItem(
                 iconText = "⚽",
                 label = "Partidos",
+                colors = colors,
                 onClick = onMatchesClick
             )
 
             UnselectedBottomItem(
                 icon = Icons.Default.Add,
                 label = "Crear",
+                colors = colors,
                 onClick = onCreateMatchClick
             )
 
             SelectedBottomItem(
                 icon = Icons.Default.Person,
                 label = "Perfil",
+                colors = colors,
                 onClick = { }
             )
         }
@@ -526,6 +638,7 @@ private fun ProfileBottomBar(
 private fun SelectedBottomItem(
     icon: ImageVector,
     label: String,
+    colors: ProfileColors,
     onClick: () -> Unit
 ) {
     Box(
@@ -533,7 +646,7 @@ private fun SelectedBottomItem(
             .width(76.dp)
             .height(66.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(GreenPrimary)
+            .background(colors.accent)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -544,7 +657,7 @@ private fun SelectedBottomItem(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = Color(0xFFBDE8B9),
+                tint = colors.selectedBottomIcon,
                 modifier = Modifier.size(26.dp)
             )
 
@@ -552,7 +665,7 @@ private fun SelectedBottomItem(
 
             Text(
                 text = label,
-                color = Color(0xFFBDE8B9),
+                color = colors.selectedBottomIcon,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -564,6 +677,7 @@ private fun SelectedBottomItem(
 private fun UnselectedBottomItem(
     icon: ImageVector,
     label: String,
+    colors: ProfileColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -577,7 +691,7 @@ private fun UnselectedBottomItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = Color(0xFF4F574C),
+            tint = colors.bottomIcon,
             modifier = Modifier.size(26.dp)
         )
 
@@ -585,7 +699,7 @@ private fun UnselectedBottomItem(
 
         Text(
             text = label,
-            color = Color(0xFF4F574C),
+            color = colors.bottomIcon,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium
         )
@@ -596,6 +710,7 @@ private fun UnselectedBottomItem(
 private fun UnselectedBottomItem(
     iconText: String,
     label: String,
+    colors: ProfileColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -609,14 +724,14 @@ private fun UnselectedBottomItem(
         Text(
             text = iconText,
             fontSize = 24.sp,
-            color = Color(0xFF4F574C)
+            color = colors.bottomIcon
         )
 
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = label,
-            color = Color(0xFF4F574C),
+            color = colors.bottomIcon,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium
         )

@@ -60,10 +60,74 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.matchball.fulbomatch.ui.theme.GrayMedium
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
-import com.matchball.fulbomatch.ui.components.MoonIconButton
+
+private data class EditProfileColors(
+    val background: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color,
+    val inputBackground: Color,
+    val inputBorder: Color,
+    val icon: Color,
+    val headerIcon: Color,
+    val accent: Color,
+    val accentText: Color,
+    val avatarBackground: Color,
+    val avatarHint: Color,
+    val cameraButtonBackground: Color,
+    val dropdownBackground: Color,
+    val bottomBarBackground: Color,
+    val bottomIcon: Color,
+    val selectedBottomIcon: Color
+)
+
+private fun editProfileColors(isDarkMode: Boolean): EditProfileColors {
+    return if (isDarkMode) {
+        EditProfileColors(
+            background = Color(0xFF111111),
+            textPrimary = Color(0xFFEDEDED),
+            textSecondary = Color(0xFFBDBDBD),
+            textMuted = Color(0xFF9E9E9E),
+            inputBackground = Color(0xFF1A1A1A),
+            inputBorder = Color(0xFF3E463E),
+            icon = Color(0xFFC9D1C9),
+            headerIcon = Color(0xFFC9D1C9),
+            accent = Color(0xFF9EF49B),
+            accentText = Color(0xFF111111),
+            avatarBackground = Color(0xFF22302B),
+            avatarHint = Color(0xFFBDBDBD),
+            cameraButtonBackground = Color(0xFF9EF49B),
+            dropdownBackground = Color(0xFF1A1A1A),
+            bottomBarBackground = Color(0xFF151515),
+            bottomIcon = Color(0xFFC9D1C9),
+            selectedBottomIcon = Color(0xFF111111)
+        )
+    } else {
+        EditProfileColors(
+            background = Color(0xFFF6F8FA),
+            textPrimary = Color(0xFF202020),
+            textSecondary = Color(0xFF465046),
+            textMuted = Color(0xFF637063),
+            inputBackground = White,
+            inputBorder = Color(0xFFCCD5DD),
+            icon = Color(0xFF465046),
+            headerIcon = GreenPrimary,
+            accent = GreenPrimary,
+            accentText = White,
+            avatarBackground = Color(0xFFE4E8E5),
+            avatarHint = Color(0xFF637063),
+            cameraButtonBackground = GreenPrimary,
+            dropdownBackground = White,
+            bottomBarBackground = Color(0xFFF3F1F1),
+            bottomIcon = Color(0xFF4F574C),
+            selectedBottomIcon = Color(0xFFBDE8B9)
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
@@ -72,7 +136,9 @@ fun EditProfileScreen(
     onHomeClick: () -> Unit = onBackClick,
     onMatchesClick: () -> Unit = {},
     onCreateMatchClick: () -> Unit = {},
-    onNotificationsClick: () -> Unit = {}
+    onNotificationsClick: () -> Unit = {},
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {}
 ) {
     var fullName by remember { mutableStateOf("Lucas Fernández") }
     var email by remember { mutableStateOf("lucasfer@gmail.com") }
@@ -91,37 +157,46 @@ fun EditProfileScreen(
         "Delantero"
     )
 
+    val colors = editProfileColors(isDarkMode)
+
     Scaffold(
         bottomBar = {
             EditProfileBottomBar(
+                colors = colors,
                 onHomeClick = onHomeClick,
                 onMatchesClick = onMatchesClick,
                 onCreateMatchClick = onCreateMatchClick
             )
         },
-        containerColor = Color(0xFFF6F8FA)
+        containerColor = colors.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF6F8FA))
+                .background(colors.background)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
                 .semantics { contentDescription = "Pantalla de editar perfil" }
         ) {
             EditProfileHeader(
+                colors = colors,
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onBackClick = onBackClick,
                 onNotificationsClick = onNotificationsClick
             )
 
             Spacer(modifier = Modifier.height(22.dp))
 
-            EditProfileAvatar()
+            EditProfileAvatar(colors = colors)
 
             Spacer(modifier = Modifier.height(22.dp))
 
-            FormLabel("Nombre completo")
+            FormLabel(
+                text = "Nombre completo",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = fullName,
@@ -130,19 +205,22 @@ fun EditProfileScreen(
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Nombre",
-                        tint = Color(0xFF465046),
+                        tint = colors.icon,
                         modifier = Modifier.size(18.dp)
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
                 singleLine = true,
-                colors = profileTextFieldColors()
+                colors = profileTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Correo electrónico")
+            FormLabel(
+                text = "Correo electrónico",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = email,
@@ -151,7 +229,7 @@ fun EditProfileScreen(
                     Icon(
                         imageVector = Icons.Default.Email,
                         contentDescription = "Correo electrónico",
-                        tint = Color(0xFF465046),
+                        tint = colors.icon,
                         modifier = Modifier.size(18.dp)
                     )
                 },
@@ -159,12 +237,15 @@ fun EditProfileScreen(
                 shape = RoundedCornerShape(10.dp),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                colors = profileTextFieldColors()
+                colors = profileTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Teléfono")
+            FormLabel(
+                text = "Teléfono",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = phone,
@@ -173,7 +254,7 @@ fun EditProfileScreen(
                     Icon(
                         imageVector = Icons.Default.Phone,
                         contentDescription = "Teléfono",
-                        tint = Color(0xFF465046),
+                        tint = colors.icon,
                         modifier = Modifier.size(18.dp)
                     )
                 },
@@ -181,12 +262,15 @@ fun EditProfileScreen(
                 shape = RoundedCornerShape(10.dp),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                colors = profileTextFieldColors()
+                colors = profileTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Edad")
+            FormLabel(
+                text = "Edad",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = age,
@@ -199,23 +283,29 @@ fun EditProfileScreen(
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Edad",
-                        tint = Color(0xFF465046),
+                        tint = colors.icon,
                         modifier = Modifier.size(18.dp)
                     )
                 },
                 placeholder = {
-                    Text(text = "Ej: 28")
+                    Text(
+                        text = "Ej: 28",
+                        color = colors.textMuted
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                colors = profileTextFieldColors()
+                colors = profileTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Zona o barrio")
+            FormLabel(
+                text = "Zona o barrio",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = zone,
@@ -224,32 +314,42 @@ fun EditProfileScreen(
                     Icon(
                         imageVector = Icons.Default.Place,
                         contentDescription = "Zona o barrio",
-                        tint = Color(0xFF465046),
+                        tint = colors.icon,
                         modifier = Modifier.size(18.dp)
                     )
                 },
                 placeholder = {
-                    Text(text = "Ej: Palermo, CABA")
+                    Text(
+                        text = "Ej: Palermo, CABA",
+                        color = colors.textMuted
+                    )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
                 singleLine = true,
-                colors = profileTextFieldColors()
+                colors = profileTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Posición preferida")
+            FormLabel(
+                text = "Posición preferida",
+                colors = colors
+            )
 
             PositionDropdown(
                 selectedPosition = position,
                 positions = positions,
+                colors = colors,
                 onPositionSelected = { position = it }
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Breve descripción")
+            FormLabel(
+                text = "Breve descripción",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = description,
@@ -263,13 +363,13 @@ fun EditProfileScreen(
                     .height(128.dp),
                 shape = RoundedCornerShape(10.dp),
                 maxLines = 5,
-                colors = profileTextFieldColors()
+                colors = profileTextFieldColors(colors)
             )
 
             Text(
                 text = "${description.length} / 300",
                 fontSize = 11.sp,
-                color = GrayMedium,
+                color = colors.textMuted,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 4.dp),
@@ -285,8 +385,8 @@ fun EditProfileScreen(
                     .height(54.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = GreenPrimary,
-                    contentColor = White
+                    containerColor = colors.accent,
+                    contentColor = colors.accentText
                 )
             ) {
                 Text(
@@ -303,6 +403,9 @@ fun EditProfileScreen(
 
 @Composable
 private fun EditProfileHeader(
+    colors: EditProfileColors,
+    isDarkMode: Boolean,
+    onToggleDarkMode: () -> Unit,
     onBackClick: () -> Unit,
     onNotificationsClick: () -> Unit
 ) {
@@ -316,32 +419,38 @@ private fun EditProfileHeader(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Volver",
-                tint = Color.Black
+                tint = colors.headerIcon
             )
         }
 
         Text(
             text = "Editar perfil",
-            color = GreenPrimary,
+            color = colors.textPrimary,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f)
         )
 
-        MoonIconButton()
+        MoonIconButton(
+            isDarkMode = isDarkMode,
+            iconColor = colors.headerIcon,
+            onClick = onToggleDarkMode
+        )
 
         IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",
-                tint = GreenPrimary
+                tint = colors.headerIcon
             )
         }
     }
 }
 
 @Composable
-private fun EditProfileAvatar() {
+private fun EditProfileAvatar(
+    colors: EditProfileColors
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -354,13 +463,13 @@ private fun EditProfileAvatar() {
                 modifier = Modifier
                     .size(112.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFFE4E8E5)),
+                    .background(colors.avatarBackground),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Person,
                     contentDescription = "Foto de perfil",
-                    tint = GreenPrimary,
+                    tint = colors.accent,
                     modifier = Modifier.size(62.dp)
                 )
             }
@@ -369,14 +478,14 @@ private fun EditProfileAvatar() {
                 modifier = Modifier
                     .size(34.dp)
                     .clip(CircleShape)
-                    .background(GreenPrimary)
+                    .background(colors.cameraButtonBackground)
                     .clickable { },
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
                     imageVector = Icons.Default.Edit,
                     contentDescription = "Editar foto",
-                    tint = White,
+                    tint = colors.accentText,
                     modifier = Modifier.size(18.dp)
                 )
             }
@@ -387,20 +496,21 @@ private fun EditProfileAvatar() {
         Text(
             text = "Toca para cambiar la foto",
             fontSize = 12.sp,
-            color = Color(0xFF637063)
+            color = colors.avatarHint
         )
     }
 }
 
 @Composable
 private fun FormLabel(
-    text: String
+    text: String,
+    colors: EditProfileColors
 ) {
     Text(
         text = text,
         fontSize = 13.sp,
         fontWeight = FontWeight.SemiBold,
-        color = Color(0xFF202020),
+        color = colors.textPrimary,
         modifier = Modifier.padding(bottom = 6.dp)
     )
 }
@@ -410,6 +520,7 @@ private fun FormLabel(
 private fun PositionDropdown(
     selectedPosition: String,
     positions: List<String>,
+    colors: EditProfileColors,
     onPositionSelected: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -432,7 +543,7 @@ private fun PositionDropdown(
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowDown,
                     contentDescription = "Abrir opciones",
-                    tint = Color(0xFF465046)
+                    tint = colors.icon
                 )
             },
             modifier = Modifier
@@ -443,21 +554,21 @@ private fun PositionDropdown(
                 ),
             shape = RoundedCornerShape(10.dp),
             singleLine = true,
-            colors = profileTextFieldColors()
+            colors = profileTextFieldColors(colors)
         )
 
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
             modifier = Modifier.heightIn(max = 240.dp),
-            containerColor = White
+            containerColor = colors.dropdownBackground
         ) {
             positions.forEach { option ->
                 DropdownMenuItem(
                     text = {
                         Text(
                             text = option,
-                            color = Color(0xFF202020),
+                            color = colors.textPrimary,
                             fontSize = 16.sp
                         )
                     },
@@ -472,20 +583,23 @@ private fun PositionDropdown(
 }
 
 @Composable
-private fun profileTextFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = GreenPrimary,
-    unfocusedBorderColor = Color(0xFFCCD5DD),
-    focusedTextColor = Color.Black,
-    unfocusedTextColor = Color.Black,
-    focusedContainerColor = White,
-    unfocusedContainerColor = White,
-    cursorColor = GreenPrimary,
-    focusedPlaceholderColor = GrayMedium,
-    unfocusedPlaceholderColor = GrayMedium
+private fun profileTextFieldColors(
+    colors: EditProfileColors
+) = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = colors.accent,
+    unfocusedBorderColor = colors.inputBorder,
+    focusedTextColor = colors.textPrimary,
+    unfocusedTextColor = colors.textPrimary,
+    focusedContainerColor = colors.inputBackground,
+    unfocusedContainerColor = colors.inputBackground,
+    cursorColor = colors.accent,
+    focusedPlaceholderColor = colors.textMuted,
+    unfocusedPlaceholderColor = colors.textMuted
 )
 
 @Composable
 private fun EditProfileBottomBar(
+    colors: EditProfileColors,
     onHomeClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onCreateMatchClick: () -> Unit
@@ -495,7 +609,7 @@ private fun EditProfileBottomBar(
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp),
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFFF3F1F1),
+        color = colors.bottomBarBackground,
         tonalElevation = 4.dp
     ) {
         Row(
@@ -509,24 +623,28 @@ private fun EditProfileBottomBar(
             UnselectedBottomItem(
                 icon = Icons.Default.Home,
                 label = "Inicio",
+                colors = colors,
                 onClick = onHomeClick
             )
 
             UnselectedBottomItem(
                 iconText = "⚽",
                 label = "Partidos",
+                colors = colors,
                 onClick = onMatchesClick
             )
 
             UnselectedBottomItem(
                 icon = Icons.Default.Add,
                 label = "Crear",
+                colors = colors,
                 onClick = onCreateMatchClick
             )
 
             SelectedBottomItem(
                 icon = Icons.Default.Person,
                 label = "Perfil",
+                colors = colors,
                 onClick = { }
             )
         }
@@ -537,6 +655,7 @@ private fun EditProfileBottomBar(
 private fun SelectedBottomItem(
     icon: ImageVector,
     label: String,
+    colors: EditProfileColors,
     onClick: () -> Unit
 ) {
     Box(
@@ -544,7 +663,7 @@ private fun SelectedBottomItem(
             .width(76.dp)
             .height(66.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(GreenPrimary)
+            .background(colors.accent)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -555,7 +674,7 @@ private fun SelectedBottomItem(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = Color(0xFFBDE8B9),
+                tint = colors.selectedBottomIcon,
                 modifier = Modifier.size(26.dp)
             )
 
@@ -563,7 +682,7 @@ private fun SelectedBottomItem(
 
             Text(
                 text = label,
-                color = Color(0xFFBDE8B9),
+                color = colors.selectedBottomIcon,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -575,6 +694,7 @@ private fun SelectedBottomItem(
 private fun UnselectedBottomItem(
     icon: ImageVector,
     label: String,
+    colors: EditProfileColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -588,7 +708,7 @@ private fun UnselectedBottomItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = Color(0xFF4F574C),
+            tint = colors.bottomIcon,
             modifier = Modifier.size(26.dp)
         )
 
@@ -596,7 +716,7 @@ private fun UnselectedBottomItem(
 
         Text(
             text = label,
-            color = Color(0xFF4F574C),
+            color = colors.bottomIcon,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium
         )
@@ -607,6 +727,7 @@ private fun UnselectedBottomItem(
 private fun UnselectedBottomItem(
     iconText: String,
     label: String,
+    colors: EditProfileColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -620,14 +741,14 @@ private fun UnselectedBottomItem(
         Text(
             text = iconText,
             fontSize = 24.sp,
-            color = Color(0xFF4F574C)
+            color = colors.bottomIcon
         )
 
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = label,
-            color = Color(0xFF4F574C),
+            color = colors.bottomIcon,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium
         )
