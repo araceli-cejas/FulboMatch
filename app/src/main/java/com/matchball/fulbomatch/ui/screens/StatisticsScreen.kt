@@ -51,14 +51,64 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.components.MoonIconButton
+import com.matchball.fulbomatch.ui.theme.GreenPrimary
 
-private val ScreenBackground = Color(0xFFFAF9F8)
-private val CardBackground = Color.White
-private val TextDark = Color(0xFF202020)
-private val TextSoft = Color(0xFF4F574C)
-private val TeamBlue = Color(0xFF004AAD)
+private data class StatisticsColors(
+    val background: Color,
+    val cardBackground: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color,
+    val headerIcon: Color,
+    val icon: Color,
+    val accent: Color,
+    val accentText: Color,
+    val teamBlue: Color,
+    val divider: Color,
+    val border: Color,
+    val bottomBarBackground: Color,
+    val bottomIcon: Color
+)
+
+private fun statisticsColors(isDarkMode: Boolean): StatisticsColors {
+    return if (isDarkMode) {
+        StatisticsColors(
+            background = Color(0xFF111111),
+            cardBackground = Color(0xFF1A1A1A),
+            textPrimary = Color(0xFFEDEDED),
+            textSecondary = Color(0xFFBDBDBD),
+            textMuted = Color(0xFF9E9E9E),
+            headerIcon = Color(0xFFC9D1C9),
+            icon = Color(0xFFC9D1C9),
+            accent = Color(0xFF9EF49B),
+            accentText = Color(0xFF111111),
+            teamBlue = Color(0xFF4D8DFF),
+            divider = Color(0xFF2A2A2A),
+            border = Color(0xFF555555),
+            bottomBarBackground = Color(0xFF151515),
+            bottomIcon = Color(0xFFC9D1C9)
+        )
+    } else {
+        StatisticsColors(
+            background = Color(0xFFFAF9F8),
+            cardBackground = Color.White,
+            textPrimary = Color(0xFF202020),
+            textSecondary = Color(0xFF4F574C),
+            textMuted = Color(0xFF6D6D6D),
+            headerIcon = GreenPrimary,
+            icon = Color(0xFF6D6D6D),
+            accent = GreenPrimary,
+            accentText = Color.White,
+            teamBlue = Color(0xFF004AAD),
+            divider = Color(0xFFE0E0E0),
+            border = Color(0xFFB9B9B9),
+            bottomBarBackground = Color(0xFFFAF9F8),
+            bottomIcon = Color(0xFF4F574C)
+        )
+    }
+}
+
 private val YellowCard = Color(0xFFE0A800)
 private val RedCard = Color(0xFFFF4D4D)
 
@@ -71,9 +121,12 @@ fun StatisticsScreen(
     onMatchesClick: () -> Unit,
     onCreateClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onNotificationsClick: () -> Unit = {}
+    onNotificationsClick: () -> Unit = {},
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {}
 ) {
     val match = getFinishedMatchDetail(matchId)
+    val colors = statisticsColors(isDarkMode)
 
     Scaffold(
         topBar = {
@@ -81,7 +134,7 @@ fun StatisticsScreen(
                 title = {
                     Text(
                         text = "Estadísticas",
-                        color = GreenPrimary,
+                        color = colors.textPrimary,
                         fontWeight = FontWeight.Bold,
                         fontSize = 22.sp
                     )
@@ -91,52 +144,59 @@ fun StatisticsScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
-                            tint = GreenPrimary
+                            tint = colors.headerIcon
                         )
                     }
                 },
                 actions = {
-                    MoonIconButton()
+                    MoonIconButton(
+                        isDarkMode = isDarkMode,
+                        iconColor = colors.headerIcon,
+                        onClick = onToggleDarkMode
+                    )
 
                     IconButton(onClick = onNotificationsClick) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "Notificaciones",
-                            tint = GreenPrimary
+                            tint = colors.headerIcon
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = ScreenBackground
+                    containerColor = colors.background
                 )
             )
         },
         bottomBar = {
             StatisticsBottomBar(
+                colors = colors,
                 onHomeClick = onHomeClick,
                 onMatchesClick = onMatchesClick,
                 onCreateClick = onCreateClick,
                 onProfileClick = onProfileClick
             )
         },
-        containerColor = ScreenBackground
+        containerColor = colors.background
     ) { paddingValues ->
         if (match == null) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(colors.background)
                     .padding(paddingValues),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "Estadísticas no encontradas",
                     fontSize = 16.sp,
-                    color = TextDark
+                    color = colors.textPrimary
                 )
             }
         } else {
             StatisticsContent(
                 match = match,
+                colors = colors,
                 modifier = Modifier.padding(paddingValues)
             )
         }
@@ -146,6 +206,7 @@ fun StatisticsScreen(
 @Composable
 private fun StatisticsContent(
     match: FinishedMatchDetail,
+    colors: StatisticsColors,
     modifier: Modifier = Modifier
 ) {
     val stats = match.statistics
@@ -153,12 +214,16 @@ private fun StatisticsContent(
     Column(
         modifier = modifier
             .fillMaxSize()
+            .background(colors.background)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
     ) {
         Spacer(modifier = Modifier.height(18.dp))
 
-        ScoreCard(match = match)
+        ScoreCard(
+            match = match,
+            colors = colors
+        )
 
         Spacer(modifier = Modifier.height(28.dp))
 
@@ -166,7 +231,7 @@ private fun StatisticsContent(
             text = "Métricas Clave",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = GreenPrimary
+            color = colors.textPrimary
         )
 
         Spacer(modifier = Modifier.height(14.dp))
@@ -177,11 +242,12 @@ private fun StatisticsContent(
         ) {
             MetricCard(
                 modifier = Modifier.weight(1f),
+                colors = colors,
                 iconContent = {
                     Text(
                         text = "⚽",
                         fontSize = 28.sp,
-                        color = Color(0xFF6D6D6D)
+                        color = colors.icon
                     )
                 },
                 value = match.totalGoals.toString(),
@@ -190,11 +256,12 @@ private fun StatisticsContent(
 
             MetricCard(
                 modifier = Modifier.weight(1f),
+                colors = colors,
                 iconContent = {
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = "Duración",
-                        tint = Color(0xFF6D6D6D),
+                        tint = colors.icon,
                         modifier = Modifier.size(27.dp)
                     )
                 },
@@ -211,6 +278,7 @@ private fun StatisticsContent(
         ) {
             MetricCard(
                 modifier = Modifier.weight(1f),
+                colors = colors,
                 iconContent = {
                     CardPenaltyIcon(
                         modifier = Modifier.size(30.dp),
@@ -223,6 +291,7 @@ private fun StatisticsContent(
 
             MetricCard(
                 modifier = Modifier.weight(1f),
+                colors = colors,
                 iconContent = {
                     CardPenaltyIcon(
                         modifier = Modifier.size(30.dp),
@@ -240,13 +309,17 @@ private fun StatisticsContent(
             text = "Goleadores",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
-            color = TextDark
+            color = colors.textPrimary
         )
 
         Spacer(modifier = Modifier.height(14.dp))
 
         stats.scorers.forEach { scorer ->
-            ScorerCard(scorer = scorer)
+            ScorerCard(
+                scorer = scorer,
+                colors = colors
+            )
+
             Spacer(modifier = Modifier.height(14.dp))
         }
 
@@ -255,14 +328,17 @@ private fun StatisticsContent(
 }
 
 @Composable
-private fun ScoreCard(match: FinishedMatchDetail) {
+private fun ScoreCard(
+    match: FinishedMatchDetail,
+    colors: StatisticsColors
+) {
     val stats = match.statistics
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardBackground
+            containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
@@ -276,7 +352,7 @@ private fun ScoreCard(match: FinishedMatchDetail) {
                 text = "FINALIZADO",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                color = TextSoft,
+                color = colors.textSecondary,
                 letterSpacing = 1.sp
             )
 
@@ -285,7 +361,7 @@ private fun ScoreCard(match: FinishedMatchDetail) {
             Text(
                 text = stats.dateTimeAndPlace,
                 fontSize = 15.sp,
-                color = TextSoft,
+                color = colors.textSecondary,
                 textAlign = TextAlign.Center
             )
 
@@ -298,7 +374,8 @@ private fun ScoreCard(match: FinishedMatchDetail) {
                 TeamColumn(
                     modifier = Modifier.weight(1f),
                     teamName = stats.teamAName,
-                    color = GreenPrimary
+                    color = colors.accent,
+                    colors = colors
                 )
 
                 Row(
@@ -310,14 +387,14 @@ private fun ScoreCard(match: FinishedMatchDetail) {
                         text = match.resultHome,
                         fontSize = 58.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = GreenPrimary
+                        color = colors.accent
                     )
 
                     Text(
                         text = " - ",
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Medium,
-                        color = TextSoft,
+                        color = colors.textSecondary,
                         modifier = Modifier.padding(horizontal = 6.dp)
                     )
 
@@ -325,14 +402,15 @@ private fun ScoreCard(match: FinishedMatchDetail) {
                         text = match.resultAway,
                         fontSize = 58.sp,
                         fontWeight = FontWeight.ExtraBold,
-                        color = TeamBlue
+                        color = colors.teamBlue
                     )
                 }
 
                 TeamColumn(
                     modifier = Modifier.weight(1f),
                     teamName = stats.teamBName,
-                    color = TeamBlue
+                    color = colors.teamBlue,
+                    colors = colors
                 )
             }
         }
@@ -343,7 +421,8 @@ private fun ScoreCard(match: FinishedMatchDetail) {
 private fun TeamColumn(
     modifier: Modifier,
     teamName: String,
-    color: Color
+    color: Color,
+    colors: StatisticsColors
 ) {
     Column(
         modifier = modifier,
@@ -369,7 +448,7 @@ private fun TeamColumn(
             text = teamName,
             fontSize = 21.sp,
             fontWeight = FontWeight.Medium,
-            color = TextDark,
+            color = colors.textPrimary,
             textAlign = TextAlign.Center
         )
     }
@@ -378,6 +457,7 @@ private fun TeamColumn(
 @Composable
 private fun MetricCard(
     modifier: Modifier,
+    colors: StatisticsColors,
     iconContent: @Composable () -> Unit,
     value: String,
     label: String
@@ -386,7 +466,7 @@ private fun MetricCard(
         modifier = modifier.height(124.dp),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardBackground
+            containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
@@ -405,13 +485,13 @@ private fun MetricCard(
                 text = value,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = TextDark
+                color = colors.textPrimary
             )
 
             Text(
                 text = label,
                 fontSize = 12.sp,
-                color = TextSoft,
+                color = colors.textSecondary,
                 textAlign = TextAlign.Center
             )
         }
@@ -419,14 +499,20 @@ private fun MetricCard(
 }
 
 @Composable
-private fun ScorerCard(scorer: FinishedMatchScorer) {
-    val teamColor = getTeamColor(scorer.teamName)
+private fun ScorerCard(
+    scorer: FinishedMatchScorer,
+    colors: StatisticsColors
+) {
+    val teamColor = getTeamColor(
+        teamName = scorer.teamName,
+        colors = colors
+    )
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = CardBackground
+            containerColor = colors.cardBackground
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -460,14 +546,14 @@ private fun ScorerCard(scorer: FinishedMatchScorer) {
                     text = scorer.name,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
-                    color = TextDark
+                    color = colors.textPrimary
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Surface(
                     shape = RoundedCornerShape(14.dp),
-                    color = teamColor.copy(alpha = 0.12f)
+                    color = teamColor.copy(alpha = 0.15f)
                 ) {
                     Text(
                         text = scorer.teamName,
@@ -484,7 +570,7 @@ private fun ScorerCard(scorer: FinishedMatchScorer) {
                 color = Color.Transparent,
                 modifier = Modifier.border(
                     width = 1.dp,
-                    color = Color(0xFFB9B9B9),
+                    color = colors.border,
                     shape = RoundedCornerShape(8.dp)
                 )
             ) {
@@ -496,7 +582,7 @@ private fun ScorerCard(scorer: FinishedMatchScorer) {
                         text = scorer.goals.toString(),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
-                        color = TextDark
+                        color = colors.textPrimary
                     )
 
                     Spacer(modifier = Modifier.width(6.dp))
@@ -504,7 +590,7 @@ private fun ScorerCard(scorer: FinishedMatchScorer) {
                     Text(
                         text = if (scorer.goals == 1) "Gol" else "Goles",
                         fontSize = 13.sp,
-                        color = TextDark
+                        color = colors.textPrimary
                     )
                 }
             }
@@ -514,6 +600,7 @@ private fun ScorerCard(scorer: FinishedMatchScorer) {
 
 @Composable
 private fun StatisticsBottomBar(
+    colors: StatisticsColors,
     onHomeClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onCreateClick: () -> Unit,
@@ -521,7 +608,7 @@ private fun StatisticsBottomBar(
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = ScreenBackground,
+        color = colors.bottomBarBackground,
         shadowElevation = 8.dp
     ) {
         Row(
@@ -537,12 +624,13 @@ private fun StatisticsBottomBar(
                     Icon(
                         imageVector = Icons.Default.Home,
                         contentDescription = "Inicio",
-                        tint = TextSoft,
+                        tint = colors.bottomIcon,
                         modifier = Modifier.size(24.dp)
                     )
                 },
                 label = "Inicio",
                 selected = false,
+                colors = colors,
                 onClick = onHomeClick
             )
 
@@ -551,11 +639,12 @@ private fun StatisticsBottomBar(
                     Text(
                         text = "⚽",
                         fontSize = 22.sp,
-                        color = Color.White
+                        color = if (true) colors.accentText else colors.bottomIcon
                     )
                 },
                 label = "Partidos",
                 selected = true,
+                colors = colors,
                 onClick = onMatchesClick
             )
 
@@ -564,12 +653,13 @@ private fun StatisticsBottomBar(
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = "Crear",
-                        tint = TextSoft,
+                        tint = colors.bottomIcon,
                         modifier = Modifier.size(25.dp)
                     )
                 },
                 label = "Crear",
                 selected = false,
+                colors = colors,
                 onClick = onCreateClick
             )
 
@@ -578,12 +668,13 @@ private fun StatisticsBottomBar(
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Perfil",
-                        tint = TextSoft,
+                        tint = colors.bottomIcon,
                         modifier = Modifier.size(24.dp)
                     )
                 },
                 label = "Perfil",
                 selected = false,
+                colors = colors,
                 onClick = onProfileClick
             )
         }
@@ -595,6 +686,7 @@ private fun BottomItem(
     icon: @Composable () -> Unit,
     label: String,
     selected: Boolean,
+    colors: StatisticsColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -604,7 +696,7 @@ private fun BottomItem(
         Surface(
             onClick = onClick,
             shape = RoundedCornerShape(28.dp),
-            color = if (selected) GreenPrimary else Color.Transparent,
+            color = if (selected) colors.accent else Color.Transparent,
             modifier = Modifier
                 .height(44.dp)
                 .width(if (selected) 78.dp else 44.dp)
@@ -622,7 +714,7 @@ private fun BottomItem(
         Text(
             text = label,
             fontSize = 11.sp,
-            color = TextSoft
+            color = colors.bottomIcon
         )
     }
 }
@@ -671,10 +763,13 @@ private fun CardPenaltyIcon(
     }
 }
 
-private fun getTeamColor(teamName: String): Color {
+private fun getTeamColor(
+    teamName: String,
+    colors: StatisticsColors
+): Color {
     return when (teamName) {
-        "Equipo A" -> GreenPrimary
-        "Equipo B" -> TeamBlue
-        else -> TextSoft
+        "Equipo A" -> colors.accent
+        "Equipo B" -> colors.teamBlue
+        else -> colors.textSecondary
     }
 }

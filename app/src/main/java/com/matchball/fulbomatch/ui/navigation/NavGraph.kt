@@ -242,7 +242,9 @@ fun NavGraph(
                     navController.navigate(Routes.Notifications.route) {
                         launchSingleTop = true
                     }
-                }
+                },
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode
             )
         }
 
