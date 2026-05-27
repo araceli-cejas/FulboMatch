@@ -250,6 +250,8 @@ fun NavGraph(
 
         composable(Routes.CreateMatch.route) {
             CreateMatchScreen(
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onMatchCreated = {
                     navController.popBackStack()
                 },
@@ -282,6 +284,8 @@ fun NavGraph(
 
             EditMatchScreen(
                 matchId = matchId,
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onBackClick = {
                     navController.popBackStack()
                 },

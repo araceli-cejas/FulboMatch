@@ -53,9 +53,83 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
-import com.matchball.fulbomatch.ui.components.MoonIconButton
+
+private data class EditMatchColors(
+    val background: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val textMuted: Color,
+    val inputBackground: Color,
+    val inputBorder: Color,
+    val icon: Color,
+    val headerIcon: Color,
+    val accent: Color,
+    val accentText: Color,
+    val disabledButton: Color,
+    val segmentedBackground: Color,
+    val optionBackground: Color,
+    val optionBorder: Color,
+    val infoBoxBackground: Color,
+    val infoBoxText: Color,
+    val danger: Color,
+    val bottomBarBackground: Color,
+    val bottomIcon: Color,
+    val selectedBottomIcon: Color
+)
+
+private fun editMatchColors(isDarkMode: Boolean): EditMatchColors {
+    return if (isDarkMode) {
+        EditMatchColors(
+            background = Color(0xFF111111),
+            textPrimary = Color(0xFFEDEDED),
+            textSecondary = Color(0xFFBDBDBD),
+            textMuted = Color(0xFF9E9E9E),
+            inputBackground = Color(0xFF1A1A1A),
+            inputBorder = Color(0xFF3E463E),
+            icon = Color(0xFFC9D1C9),
+            headerIcon = Color(0xFFC9D1C9),
+            accent = Color(0xFF9EF49B),
+            accentText = Color(0xFF111111),
+            disabledButton = Color(0xFF3A4A3A),
+            segmentedBackground = Color(0xFF1A1A1A),
+            optionBackground = Color(0xFF1A1A1A),
+            optionBorder = Color(0xFF3E463E),
+            infoBoxBackground = Color(0xFF163B73),
+            infoBoxText = Color(0xFFDCEBFF),
+            danger = Color(0xFFFF6B6B),
+            bottomBarBackground = Color(0xFF151515),
+            bottomIcon = Color(0xFFC9D1C9),
+            selectedBottomIcon = Color(0xFF111111)
+        )
+    } else {
+        EditMatchColors(
+            background = Color(0xFFFAF9F8),
+            textPrimary = Color(0xFF202020),
+            textSecondary = Color(0xFF4F574C),
+            textMuted = Color(0xFF6F6F6F),
+            inputBackground = White,
+            inputBorder = Color(0xFFCCD5DD),
+            icon = Color(0xFF465046),
+            headerIcon = GreenPrimary,
+            accent = GreenPrimary,
+            accentText = White,
+            disabledButton = Color(0xFFB8C7B8),
+            segmentedBackground = Color(0xFFEFEDED),
+            optionBackground = White,
+            optionBorder = Color(0xFFCCD5DD),
+            infoBoxBackground = Color(0xFF0B5BCB),
+            infoBoxText = White,
+            danger = Color(0xFFD32F2F),
+            bottomBarBackground = Color(0xFFF3F1F1),
+            bottomIcon = Color(0xFF4F574C),
+            selectedBottomIcon = Color(0xFFBDE8B9)
+        )
+    }
+}
+
 @Composable
 fun EditMatchScreen(
     matchId: String,
@@ -66,7 +140,9 @@ fun EditMatchScreen(
     onMatchesClick: () -> Unit,
     onCreateMatchClick: () -> Unit,
     onProfileClick: () -> Unit,
-    onNotificationsClick: () -> Unit = {}
+    onNotificationsClick: () -> Unit = {},
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {}
 ) {
     val initialTitle = when (matchId) {
         "2" -> "Fútbol 7 Mix"
@@ -86,33 +162,42 @@ fun EditMatchScreen(
         mutableStateOf("Llegar 15 minutos antes. Se suspende por lluvia fuerte. Traer camiseta blanca o negra.")
     }
 
+    val colors = editMatchColors(isDarkMode)
+
     Scaffold(
         bottomBar = {
             EditMatchBottomBar(
+                colors = colors,
                 onHomeClick = onHomeClick,
                 onMatchesClick = onMatchesClick,
                 onCreateMatchClick = onCreateMatchClick,
                 onProfileClick = onProfileClick
             )
         },
-        containerColor = Color(0xFFFAF9F8)
+        containerColor = colors.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFFAF9F8))
+                .background(colors.background)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 18.dp, vertical = 10.dp)
         ) {
             EditMatchHeader(
+                colors = colors,
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onBackClick = onBackClick,
                 onNotificationsClick = onNotificationsClick
             )
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            EditMatchLabel("Título del partido")
+            EditMatchLabel(
+                text = "Título del partido",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = title,
@@ -120,7 +205,7 @@ fun EditMatchScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
                 singleLine = true,
-                colors = editMatchTextFieldColors()
+                colors = editMatchTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -130,7 +215,10 @@ fun EditMatchScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    EditMatchLabel("Fecha")
+                    EditMatchLabel(
+                        text = "Fecha",
+                        colors = colors
+                    )
 
                     OutlinedTextField(
                         value = date,
@@ -145,7 +233,7 @@ fun EditMatchScreen(
                             Icon(
                                 imageVector = Icons.Default.DateRange,
                                 contentDescription = "Fecha",
-                                tint = Color(0xFF465046)
+                                tint = colors.icon
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -154,12 +242,15 @@ fun EditMatchScreen(
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number
                         ),
-                        colors = editMatchTextFieldColors()
+                        colors = editMatchTextFieldColors(colors)
                     )
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    EditMatchLabel("Hora")
+                    EditMatchLabel(
+                        text = "Hora",
+                        colors = colors
+                    )
 
                     OutlinedTextField(
                         value = time,
@@ -174,7 +265,7 @@ fun EditMatchScreen(
                             Icon(
                                 imageVector = Icons.Default.AccessTime,
                                 contentDescription = "Hora",
-                                tint = Color(0xFF465046)
+                                tint = colors.icon
                             )
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -183,14 +274,17 @@ fun EditMatchScreen(
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number
                         ),
-                        colors = editMatchTextFieldColors()
+                        colors = editMatchTextFieldColors(colors)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            EditMatchLabel("Ubicación")
+            EditMatchLabel(
+                text = "Ubicación",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = location,
@@ -199,13 +293,13 @@ fun EditMatchScreen(
                     Icon(
                         imageVector = Icons.Default.Place,
                         contentDescription = "Ubicación",
-                        tint = Color(0xFF465046)
+                        tint = colors.icon
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
                 singleLine = true,
-                colors = editMatchTextFieldColors()
+                colors = editMatchTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -215,7 +309,10 @@ fun EditMatchScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    EditMatchLabel("Precio por jugador")
+                    EditMatchLabel(
+                        text = "Precio por jugador",
+                        colors = colors
+                    )
 
                     OutlinedTextField(
                         value = price,
@@ -229,22 +326,28 @@ fun EditMatchScreen(
                                 text = "$",
                                 fontSize = 20.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF465046)
+                                color = colors.icon
                             )
                         },
                         placeholder = {
-                            Text(text = "Ej: 1500")
+                            Text(
+                                text = "Ej: 1500",
+                                color = colors.textMuted
+                            )
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = editMatchTextFieldColors()
+                        colors = editMatchTextFieldColors(colors)
                     )
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    EditMatchLabel("Cantidad de jugadores")
+                    EditMatchLabel(
+                        text = "Cantidad de jugadores",
+                        colors = colors
+                    )
 
                     OutlinedTextField(
                         value = players,
@@ -254,7 +357,10 @@ fun EditMatchScreen(
                             }
                         },
                         placeholder = {
-                            Text("Ej: 10")
+                            Text(
+                                text = "Ej: 10",
+                                color = colors.textMuted
+                            )
                         },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
@@ -262,7 +368,7 @@ fun EditMatchScreen(
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number
                         ),
-                        colors = editMatchTextFieldColors()
+                        colors = editMatchTextFieldColors(colors)
                     )
                 }
             }
@@ -274,7 +380,7 @@ fun EditMatchScreen(
             ) {
                 Text(
                     text = "ℹ",
-                    color = GreenPrimary,
+                    color = colors.accent,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -283,7 +389,7 @@ fun EditMatchScreen(
 
                 Text(
                     text = "Podés aumentar el cupo, pero no reducirlo por debajo de los jugadores anotados.",
-                    color = Color(0xFF4F574C),
+                    color = colors.textSecondary,
                     fontSize = 11.sp,
                     lineHeight = 15.sp
                 )
@@ -291,27 +397,38 @@ fun EditMatchScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            EditMatchLabel("Nivel de juego")
+            EditMatchLabel(
+                text = "Nivel de juego",
+                colors = colors
+            )
 
             EditSegmentedOptions(
                 options = listOf("Amateur", "Medio", "Avanzado"),
                 selectedOption = level,
+                colors = colors,
                 onOptionSelected = { level = it }
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            EditMatchLabel("Superficie")
+            EditMatchLabel(
+                text = "Superficie",
+                colors = colors
+            )
 
             EditChipOptions(
                 options = listOf("Sintético", "Césped Natural", "Indoor"),
                 selectedOption = surface,
+                colors = colors,
                 onOptionSelected = { surface = it }
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            EditMatchLabel("Descripción / Reglas")
+            EditMatchLabel(
+                text = "Descripción / Reglas",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = description,
@@ -325,12 +442,12 @@ fun EditMatchScreen(
                     .height(112.dp),
                 shape = RoundedCornerShape(10.dp),
                 maxLines = 4,
-                colors = editMatchTextFieldColors()
+                colors = editMatchTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(22.dp))
 
-            EditMatchInfoBox()
+            EditMatchInfoBox(colors = colors)
 
             Spacer(modifier = Modifier.height(22.dp))
 
@@ -342,9 +459,9 @@ fun EditMatchScreen(
                 shape = RoundedCornerShape(28.dp),
                 enabled = isCompleteDate(date) && isCompleteTime(time),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = GreenPrimary,
-                    contentColor = White,
-                    disabledContainerColor = Color(0xFFB8C7B8),
+                    containerColor = colors.accent,
+                    contentColor = colors.accentText,
+                    disabledContainerColor = colors.disabledButton,
                     disabledContentColor = White
                 )
             ) {
@@ -363,9 +480,9 @@ fun EditMatchScreen(
                     .fillMaxWidth()
                     .height(52.dp),
                 shape = RoundedCornerShape(28.dp),
-                border = BorderStroke(1.dp, Color(0xFFD32F2F)),
+                border = BorderStroke(1.dp, colors.danger),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = Color(0xFFD32F2F)
+                    contentColor = colors.danger
                 )
             ) {
                 Text(
@@ -382,6 +499,9 @@ fun EditMatchScreen(
 
 @Composable
 private fun EditMatchHeader(
+    colors: EditMatchColors,
+    isDarkMode: Boolean,
+    onToggleDarkMode: () -> Unit,
     onBackClick: () -> Unit,
     onNotificationsClick: () -> Unit
 ) {
@@ -395,37 +515,44 @@ private fun EditMatchHeader(
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Volver",
-                tint = GreenPrimary
+                tint = colors.headerIcon
             )
         }
 
         Text(
             text = "Editar Partido",
-            color = GreenPrimary,
+            color = colors.textPrimary,
             fontSize = 20.sp,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.weight(1f)
         )
 
-        MoonIconButton()
+        MoonIconButton(
+            isDarkMode = isDarkMode,
+            iconColor = colors.headerIcon,
+            onClick = onToggleDarkMode
+        )
 
         IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",
-                tint = GreenPrimary
+                tint = colors.headerIcon
             )
         }
     }
 }
 
 @Composable
-private fun EditMatchLabel(text: String) {
+private fun EditMatchLabel(
+    text: String,
+    colors: EditMatchColors
+) {
     Text(
         text = text,
         fontSize = 12.sp,
         fontWeight = FontWeight.Medium,
-        color = Color(0xFF4A4A4A),
+        color = colors.textSecondary,
         modifier = Modifier.padding(bottom = 6.dp)
     )
 }
@@ -434,30 +561,33 @@ private fun EditMatchLabel(text: String) {
 private fun EditSegmentedOptions(
     options: List<String>,
     selectedOption: String,
+    colors: EditMatchColors,
     onOptionSelected: (String) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFEFEDED))
+            .background(colors.segmentedBackground)
             .padding(3.dp)
     ) {
         options.forEach { option ->
+            val selected = selectedOption == option
+
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .height(42.dp)
                     .clip(RoundedCornerShape(4.dp))
                     .background(
-                        if (selectedOption == option) GreenPrimary else Color.Transparent
+                        if (selected) colors.accent else Color.Transparent
                     )
                     .clickable { onOptionSelected(option) },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = option,
-                    color = if (selectedOption == option) White else Color(0xFF4F574C),
+                    color = if (selected) colors.accentText else colors.textSecondary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -470,25 +600,28 @@ private fun EditSegmentedOptions(
 private fun EditChipOptions(
     options: List<String>,
     selectedOption: String,
+    colors: EditMatchColors,
     onOptionSelected: (String) -> Unit
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         options.forEach { option ->
+            val selected = selectedOption == option
+
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = if (selectedOption == option) GreenPrimary else Color.White,
+                color = if (selected) colors.accent else colors.optionBackground,
                 border = BorderStroke(
                     width = 1.dp,
-                    color = if (selectedOption == option) GreenPrimary else Color(0xFFCCD5DD)
+                    color = if (selected) colors.accent else colors.optionBorder
                 ),
                 modifier = Modifier.clickable { onOptionSelected(option) }
             ) {
                 Text(
                     text = option,
                     fontSize = 12.sp,
-                    color = if (selectedOption == option) White else Color(0xFF4F574C),
+                    color = if (selected) colors.accentText else colors.textSecondary,
                     modifier = Modifier.padding(horizontal = 13.dp, vertical = 9.dp)
                 )
             }
@@ -497,12 +630,14 @@ private fun EditChipOptions(
 }
 
 @Composable
-private fun EditMatchInfoBox() {
+private fun EditMatchInfoBox(
+    colors: EditMatchColors
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF0B5BCB)
+            containerColor = colors.infoBoxBackground
         )
     ) {
         Row(
@@ -511,7 +646,7 @@ private fun EditMatchInfoBox() {
         ) {
             Text(
                 text = "ℹ",
-                color = Color(0xFFDCEBFF),
+                color = colors.infoBoxText,
                 fontSize = 17.sp,
                 fontWeight = FontWeight.Bold
             )
@@ -520,7 +655,7 @@ private fun EditMatchInfoBox() {
 
             Text(
                 text = "Al guardar los cambios o cancelar el partido, se notificará automáticamente a todos los jugadores confirmados.",
-                color = White,
+                color = colors.infoBoxText,
                 fontSize = 13.sp,
                 lineHeight = 18.sp
             )
@@ -529,16 +664,18 @@ private fun EditMatchInfoBox() {
 }
 
 @Composable
-private fun editMatchTextFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = GreenPrimary,
-    unfocusedBorderColor = Color(0xFFCCD5DD),
-    focusedTextColor = Color.Black,
-    unfocusedTextColor = Color.Black,
-    focusedContainerColor = White,
-    unfocusedContainerColor = White,
-    cursorColor = GreenPrimary,
-    focusedPlaceholderColor = Color(0xFF8A8A8A),
-    unfocusedPlaceholderColor = Color(0xFF8A8A8A)
+private fun editMatchTextFieldColors(
+    colors: EditMatchColors
+) = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = colors.accent,
+    unfocusedBorderColor = colors.inputBorder,
+    focusedTextColor = colors.textPrimary,
+    unfocusedTextColor = colors.textPrimary,
+    focusedContainerColor = colors.inputBackground,
+    unfocusedContainerColor = colors.inputBackground,
+    cursorColor = colors.accent,
+    focusedPlaceholderColor = colors.textMuted,
+    unfocusedPlaceholderColor = colors.textMuted
 )
 
 private fun formatDateInput(value: String): String {
@@ -632,6 +769,7 @@ private fun isCompleteTime(value: String): Boolean {
 
 @Composable
 private fun EditMatchBottomBar(
+    colors: EditMatchColors,
     onHomeClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onCreateMatchClick: () -> Unit,
@@ -642,7 +780,7 @@ private fun EditMatchBottomBar(
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp),
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFFF3F1F1),
+        color = colors.bottomBarBackground,
         tonalElevation = 4.dp
     ) {
         Row(
@@ -657,6 +795,7 @@ private fun EditMatchBottomBar(
                 icon = Icons.Default.Home,
                 label = "Inicio",
                 selected = false,
+                colors = colors,
                 onClick = onHomeClick
             )
 
@@ -664,6 +803,7 @@ private fun EditMatchBottomBar(
                 iconText = "⚽",
                 label = "Partidos",
                 selected = true,
+                colors = colors,
                 onClick = onMatchesClick
             )
 
@@ -671,6 +811,7 @@ private fun EditMatchBottomBar(
                 icon = Icons.Default.Add,
                 label = "Crear",
                 selected = false,
+                colors = colors,
                 onClick = onCreateMatchClick
             )
 
@@ -678,6 +819,7 @@ private fun EditMatchBottomBar(
                 icon = Icons.Default.Person,
                 label = "Perfil",
                 selected = false,
+                colors = colors,
                 onClick = onProfileClick
             )
         }
@@ -689,6 +831,7 @@ private fun EditMatchBottomItem(
     icon: ImageVector,
     label: String,
     selected: Boolean,
+    colors: EditMatchColors,
     onClick: () -> Unit
 ) {
     Box(
@@ -696,7 +839,7 @@ private fun EditMatchBottomItem(
             .width(76.dp)
             .height(66.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(if (selected) GreenPrimary else Color.Transparent)
+            .background(if (selected) colors.accent else Color.Transparent)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -707,7 +850,7 @@ private fun EditMatchBottomItem(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = if (selected) Color(0xFFBDE8B9) else Color(0xFF4F574C),
+                tint = if (selected) colors.selectedBottomIcon else colors.bottomIcon,
                 modifier = Modifier.size(26.dp)
             )
 
@@ -715,7 +858,7 @@ private fun EditMatchBottomItem(
 
             Text(
                 text = label,
-                color = if (selected) Color(0xFFBDE8B9) else Color(0xFF4F574C),
+                color = if (selected) colors.selectedBottomIcon else colors.bottomIcon,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -728,6 +871,7 @@ private fun EditMatchBottomItem(
     iconText: String,
     label: String,
     selected: Boolean,
+    colors: EditMatchColors,
     onClick: () -> Unit
 ) {
     Box(
@@ -735,7 +879,7 @@ private fun EditMatchBottomItem(
             .width(76.dp)
             .height(66.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(if (selected) GreenPrimary else Color.Transparent)
+            .background(if (selected) colors.accent else Color.Transparent)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -746,14 +890,14 @@ private fun EditMatchBottomItem(
             Text(
                 text = iconText,
                 fontSize = 24.sp,
-                color = if (selected) Color(0xFFBDE8B9) else Color(0xFF4F574C)
+                color = if (selected) colors.selectedBottomIcon else colors.bottomIcon
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = label,
-                color = if (selected) Color(0xFFBDE8B9) else Color(0xFF4F574C),
+                color = if (selected) colors.selectedBottomIcon else colors.bottomIcon,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )

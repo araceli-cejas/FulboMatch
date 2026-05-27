@@ -1,5 +1,6 @@
 package com.matchball.fulbomatch.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -58,18 +59,84 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
-import com.matchball.fulbomatch.ui.theme.GrayMedium
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
 import kotlin.math.roundToInt
-import com.matchball.fulbomatch.ui.components.MoonIconButton
+
+private data class CreateMatchColors(
+    val background: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val placeholder: Color,
+    val inputBackground: Color,
+    val inputBorder: Color,
+    val icon: Color,
+    val headerIcon: Color,
+    val accent: Color,
+    val accentText: Color,
+    val chipBackground: Color,
+    val chipSelectedBackground: Color,
+    val chipBorder: Color,
+    val sliderInactive: Color,
+    val bottomBarBackground: Color,
+    val bottomIcon: Color,
+    val selectedBottomIcon: Color
+)
+
+private fun createMatchColors(isDarkMode: Boolean): CreateMatchColors {
+    return if (isDarkMode) {
+        CreateMatchColors(
+            background = Color(0xFF111111),
+            textPrimary = Color(0xFFEDEDED),
+            textSecondary = Color(0xFFBDBDBD),
+            placeholder = Color(0xFF9E9E9E),
+            inputBackground = Color(0xFF1A1A1A),
+            inputBorder = Color(0xFF3E463E),
+            icon = Color(0xFFC9D1C9),
+            headerIcon = Color(0xFFC9D1C9),
+            accent = Color(0xFF9EF49B),
+            accentText = Color(0xFF111111),
+            chipBackground = Color(0xFF1A1A1A),
+            chipSelectedBackground = Color(0xFF9EF49B),
+            chipBorder = Color(0xFF3E463E),
+            sliderInactive = Color(0xFF333333),
+            bottomBarBackground = Color(0xFF151515),
+            bottomIcon = Color(0xFFC9D1C9),
+            selectedBottomIcon = Color(0xFF111111)
+        )
+    } else {
+        CreateMatchColors(
+            background = Color(0xFFF6F6F6),
+            textPrimary = Color(0xFF202020),
+            textSecondary = Color(0xFF4F574C),
+            placeholder = Color(0xFF8A8A8A),
+            inputBackground = White,
+            inputBorder = Color(0xFFBDBDBD),
+            icon = Color(0xFF455044),
+            headerIcon = GreenPrimary,
+            accent = GreenPrimary,
+            accentText = White,
+            chipBackground = White,
+            chipSelectedBackground = Color(0xFFE2E2E2),
+            chipBorder = Color(0xFFD0D0D0),
+            sliderInactive = Color(0xFFE0E0E0),
+            bottomBarBackground = Color(0xFFF3F1F1),
+            bottomIcon = Color(0xFF4F574C),
+            selectedBottomIcon = Color(0xFFBDE8B9)
+        )
+    }
+}
+
 @Composable
 fun CreateMatchScreen(
     onMatchCreated: () -> Unit,
     onBackClick: () -> Unit,
     onProfileClick: () -> Unit = {},
     onMatchesClick: () -> Unit = {},
-    onNotificationsClick: () -> Unit = {}
+    onNotificationsClick: () -> Unit = {},
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {}
 ) {
     var title by remember { mutableStateOf("") }
     var date by remember { mutableStateOf("") }
@@ -80,26 +147,32 @@ fun CreateMatchScreen(
     var selectedLevel by remember { mutableStateOf("Intermedio") }
     var description by remember { mutableStateOf("") }
 
+    val colors = createMatchColors(isDarkMode)
+
     Scaffold(
         bottomBar = {
             CreateMatchBottomBar(
+                colors = colors,
                 onHomeClick = onBackClick,
                 onMatchesClick = onMatchesClick,
                 onProfileClick = onProfileClick
             )
         },
-        containerColor = Color(0xFFF6F6F6)
+        containerColor = colors.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFFF6F6F6))
+                .background(colors.background)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp, vertical = 12.dp)
                 .semantics { contentDescription = "Formulario para crear partido" }
         ) {
             CreateMatchHeader(
+                colors = colors,
+                isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onNotificationsClick = onNotificationsClick
             )
 
@@ -109,12 +182,15 @@ fun CreateMatchScreen(
                 text = "Crear nuevo partido",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color(0xFF202020)
+                color = colors.textPrimary
             )
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            FormLabel("Título del partido")
+            FormLabel(
+                text = "Título del partido",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = title,
@@ -122,18 +198,21 @@ fun CreateMatchScreen(
                 placeholder = {
                     Text(
                         text = "Ej: Futbol 5 en Palermo",
-                        color = GrayMedium
+                        color = colors.placeholder
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true,
-                colors = formTextFieldColors()
+                colors = formTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Fecha")
+            FormLabel(
+                text = "Fecha",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = date,
@@ -141,14 +220,14 @@ fun CreateMatchScreen(
                 placeholder = {
                     Text(
                         text = "dd/mm/yyyy",
-                        color = GrayMedium
+                        color = colors.placeholder
                     )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.DateRange,
                         contentDescription = "Fecha",
-                        tint = Color(0xFF455044),
+                        tint = colors.icon,
                         modifier = Modifier.size(20.dp)
                     )
                 },
@@ -158,12 +237,15 @@ fun CreateMatchScreen(
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number
                 ),
-                colors = formTextFieldColors()
+                colors = formTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Hora")
+            FormLabel(
+                text = "Hora",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = time,
@@ -171,14 +253,14 @@ fun CreateMatchScreen(
                 placeholder = {
                     Text(
                         text = "hh:mm",
-                        color = GrayMedium
+                        color = colors.placeholder
                     )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.AccessTime,
                         contentDescription = "Hora",
-                        tint = Color(0xFF455044),
+                        tint = colors.icon,
                         modifier = Modifier.size(22.dp)
                     )
                 },
@@ -188,12 +270,15 @@ fun CreateMatchScreen(
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number
                 ),
-                colors = formTextFieldColors()
+                colors = formTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Zona / Ubicación")
+            FormLabel(
+                text = "Zona / Ubicación",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = location,
@@ -201,26 +286,29 @@ fun CreateMatchScreen(
                 placeholder = {
                     Text(
                         text = "Busca una cancha o dirección",
-                        color = GrayMedium
+                        color = colors.placeholder
                     )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Place,
                         contentDescription = "Ubicación",
-                        tint = Color(0xFF455044),
+                        tint = colors.icon,
                         modifier = Modifier.size(20.dp)
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true,
-                colors = formTextFieldColors()
+                colors = formTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Precio por jugador")
+            FormLabel(
+                text = "Precio por jugador",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = price,
@@ -228,21 +316,21 @@ fun CreateMatchScreen(
                 placeholder = {
                     Text(
                         text = "$ 1500",
-                        color = GrayMedium
+                        color = colors.placeholder
                     )
                 },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Payments,
                         contentDescription = "Precio",
-                        tint = Color(0xFF455044),
+                        tint = colors.icon,
                         modifier = Modifier.size(22.dp)
                     )
                 },
                 prefix = {
                     Text(
                         text = "$ ",
-                        color = Color.Black
+                        color = colors.textPrimary
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -251,7 +339,7 @@ fun CreateMatchScreen(
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Number
                 ),
-                colors = formTextFieldColors()
+                colors = formTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -262,12 +350,13 @@ fun CreateMatchScreen(
             ) {
                 FormLabel(
                     text = "Máximo de jugadores",
+                    colors = colors,
                     modifier = Modifier.weight(1f)
                 )
 
                 Text(
                     text = maxPlayers.roundToInt().toString(),
-                    color = GreenPrimary,
+                    color = colors.accent,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -279,15 +368,18 @@ fun CreateMatchScreen(
                 valueRange = 2f..22f,
                 steps = 19,
                 colors = SliderDefaults.colors(
-                    thumbColor = GreenPrimary,
-                    activeTrackColor = GreenPrimary,
-                    inactiveTrackColor = Color(0xFFE0E0E0)
+                    thumbColor = colors.accent,
+                    activeTrackColor = colors.accent,
+                    inactiveTrackColor = colors.sliderInactive
                 )
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            FormLabel("Nivel requerido")
+            FormLabel(
+                text = "Nivel requerido",
+                colors = colors
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -298,25 +390,31 @@ fun CreateMatchScreen(
                 LevelChip(
                     text = "Principiante",
                     selected = selectedLevel == "Principiante",
+                    colors = colors,
                     onClick = { selectedLevel = "Principiante" }
                 )
 
                 LevelChip(
                     text = "Intermedio",
                     selected = selectedLevel == "Intermedio",
+                    colors = colors,
                     onClick = { selectedLevel = "Intermedio" }
                 )
 
                 LevelChip(
                     text = "Avanzado",
                     selected = selectedLevel == "Avanzado",
+                    colors = colors,
                     onClick = { selectedLevel = "Avanzado" }
                 )
             }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            FormLabel("Descripción (Opcional)")
+            FormLabel(
+                text = "Descripción (Opcional)",
+                colors = colors
+            )
 
             OutlinedTextField(
                 value = description,
@@ -324,7 +422,7 @@ fun CreateMatchScreen(
                 placeholder = {
                     Text(
                         text = "Añade detalles sobre el partido, reglas,\netc.",
-                        color = GrayMedium
+                        color = colors.placeholder
                     )
                 },
                 modifier = Modifier
@@ -332,7 +430,7 @@ fun CreateMatchScreen(
                     .height(110.dp),
                 shape = RoundedCornerShape(8.dp),
                 maxLines = 4,
-                colors = formTextFieldColors()
+                colors = formTextFieldColors(colors)
             )
 
             Spacer(modifier = Modifier.height(28.dp))
@@ -344,8 +442,8 @@ fun CreateMatchScreen(
                     .height(54.dp),
                 shape = RoundedCornerShape(28.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = GreenPrimary,
-                    contentColor = White
+                    containerColor = colors.accent,
+                    contentColor = colors.accentText
                 )
             ) {
                 Icon(
@@ -370,30 +468,43 @@ fun CreateMatchScreen(
 
 @Composable
 private fun CreateMatchHeader(
+    colors: CreateMatchColors,
+    isDarkMode: Boolean,
+    onToggleDarkMode: () -> Unit,
     onNotificationsClick: () -> Unit
 ) {
+    val logoRes = if (isDarkMode) {
+        R.drawable.logo_dark
+    } else {
+        R.drawable.nombre
+    }
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Image(
-            painter = painterResource(id = R.drawable.nombre),
+            painter = painterResource(id = logoRes),
             contentDescription = "Logo FulboMatch",
             modifier = Modifier
-                .width(155.dp)
+                .width(190.dp)
                 .height(42.dp),
             contentScale = ContentScale.Fit
         )
 
         Spacer(modifier = Modifier.weight(1f))
 
-        MoonIconButton()
+        MoonIconButton(
+            isDarkMode = isDarkMode,
+            iconColor = colors.headerIcon,
+            onClick = onToggleDarkMode
+        )
 
         IconButton(onClick = onNotificationsClick) {
             Icon(
                 imageVector = Icons.Default.Notifications,
                 contentDescription = "Notificaciones",
-                tint = GreenPrimary
+                tint = colors.headerIcon
             )
         }
     }
@@ -402,13 +513,14 @@ private fun CreateMatchHeader(
 @Composable
 private fun FormLabel(
     text: String,
+    colors: CreateMatchColors,
     modifier: Modifier = Modifier
 ) {
     Text(
         text = text,
         fontSize = 13.sp,
         fontWeight = FontWeight.Medium,
-        color = Color(0xFF222222),
+        color = colors.textPrimary,
         modifier = modifier.padding(bottom = 6.dp)
     )
 }
@@ -417,6 +529,7 @@ private fun FormLabel(
 private fun LevelChip(
     text: String,
     selected: Boolean,
+    colors: CreateMatchColors,
     onClick: () -> Unit
 ) {
     Surface(
@@ -424,8 +537,11 @@ private fun LevelChip(
             .height(36.dp)
             .clickable { onClick() },
         shape = RoundedCornerShape(18.dp),
-        color = if (selected) Color(0xFFE2E2E2) else White,
-        border = ButtonDefaults.outlinedButtonBorder(enabled = true)
+        color = if (selected) colors.chipSelectedBackground else colors.chipBackground,
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (selected) colors.accent else colors.chipBorder
+        )
     ) {
         Box(
             modifier = Modifier.padding(horizontal = 14.dp),
@@ -434,7 +550,7 @@ private fun LevelChip(
             Text(
                 text = text,
                 fontSize = 13.sp,
-                color = Color(0xFF222222),
+                color = if (selected) colors.accentText else colors.textPrimary,
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
             )
         }
@@ -442,16 +558,18 @@ private fun LevelChip(
 }
 
 @Composable
-private fun formTextFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = GreenPrimary,
-    unfocusedBorderColor = Color(0xFFBDBDBD),
-    focusedTextColor = Color.Black,
-    unfocusedTextColor = Color.Black,
-    focusedPlaceholderColor = GrayMedium,
-    unfocusedPlaceholderColor = GrayMedium,
-    cursorColor = GreenPrimary,
-    focusedContainerColor = White,
-    unfocusedContainerColor = White
+private fun formTextFieldColors(
+    colors: CreateMatchColors
+) = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = colors.accent,
+    unfocusedBorderColor = colors.inputBorder,
+    focusedTextColor = colors.textPrimary,
+    unfocusedTextColor = colors.textPrimary,
+    focusedPlaceholderColor = colors.placeholder,
+    unfocusedPlaceholderColor = colors.placeholder,
+    cursorColor = colors.accent,
+    focusedContainerColor = colors.inputBackground,
+    unfocusedContainerColor = colors.inputBackground
 )
 
 private fun formatDateInput(input: String): String {
@@ -488,6 +606,7 @@ private fun formatTimeInput(input: String): String {
 
 @Composable
 private fun CreateMatchBottomBar(
+    colors: CreateMatchColors,
     onHomeClick: () -> Unit,
     onMatchesClick: () -> Unit,
     onProfileClick: () -> Unit
@@ -497,7 +616,7 @@ private fun CreateMatchBottomBar(
             .fillMaxWidth()
             .padding(horizontal = 10.dp, vertical = 8.dp),
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFFF3F1F1),
+        color = colors.bottomBarBackground,
         tonalElevation = 4.dp
     ) {
         Row(
@@ -511,24 +630,28 @@ private fun CreateMatchBottomBar(
             UnselectedBottomItem(
                 icon = Icons.Default.Home,
                 label = "Inicio",
+                colors = colors,
                 onClick = onHomeClick
             )
 
             UnselectedBottomItem(
                 iconText = "⚽",
                 label = "Partidos",
+                colors = colors,
                 onClick = onMatchesClick
             )
 
             SelectedBottomItem(
                 icon = Icons.Default.Add,
                 label = "Crear",
+                colors = colors,
                 onClick = { }
             )
 
             UnselectedBottomItem(
                 icon = Icons.Default.Person,
                 label = "Perfil",
+                colors = colors,
                 onClick = onProfileClick
             )
         }
@@ -539,6 +662,7 @@ private fun CreateMatchBottomBar(
 private fun SelectedBottomItem(
     icon: ImageVector,
     label: String,
+    colors: CreateMatchColors,
     onClick: () -> Unit
 ) {
     Box(
@@ -546,7 +670,7 @@ private fun SelectedBottomItem(
             .width(76.dp)
             .height(66.dp)
             .clip(RoundedCornerShape(22.dp))
-            .background(GreenPrimary)
+            .background(colors.accent)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
@@ -557,7 +681,7 @@ private fun SelectedBottomItem(
             Icon(
                 imageVector = icon,
                 contentDescription = label,
-                tint = Color(0xFFBDE8B9),
+                tint = colors.selectedBottomIcon,
                 modifier = Modifier.size(26.dp)
             )
 
@@ -565,7 +689,7 @@ private fun SelectedBottomItem(
 
             Text(
                 text = label,
-                color = Color(0xFFBDE8B9),
+                color = colors.selectedBottomIcon,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -577,6 +701,7 @@ private fun SelectedBottomItem(
 private fun UnselectedBottomItem(
     icon: ImageVector,
     label: String,
+    colors: CreateMatchColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -590,7 +715,7 @@ private fun UnselectedBottomItem(
         Icon(
             imageVector = icon,
             contentDescription = label,
-            tint = Color(0xFF4F574C),
+            tint = colors.bottomIcon,
             modifier = Modifier.size(26.dp)
         )
 
@@ -598,7 +723,7 @@ private fun UnselectedBottomItem(
 
         Text(
             text = label,
-            color = Color(0xFF4F574C),
+            color = colors.bottomIcon,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium
         )
@@ -609,6 +734,7 @@ private fun UnselectedBottomItem(
 private fun UnselectedBottomItem(
     iconText: String,
     label: String,
+    colors: CreateMatchColors,
     onClick: () -> Unit
 ) {
     Column(
@@ -622,14 +748,14 @@ private fun UnselectedBottomItem(
         Text(
             text = iconText,
             fontSize = 24.sp,
-            color = Color(0xFF4F574C)
+            color = colors.bottomIcon
         )
 
         Spacer(modifier = Modifier.height(4.dp))
 
         Text(
             text = label,
-            color = Color(0xFF4F574C),
+            color = colors.bottomIcon,
             fontSize = 13.sp,
             fontWeight = FontWeight.Medium
         )
