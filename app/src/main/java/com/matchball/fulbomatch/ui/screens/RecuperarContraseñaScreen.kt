@@ -204,7 +204,7 @@ fun RecuperarContraseñaScreen(
 
                 Text(
                     text = "Te hemos enviado un enlace de recuperación al correo:\n$email",
-                    fontSize = 14.sp,
+                    fontSize = 18.sp,
                     color = GrayMedium,
                     textAlign = TextAlign.Center,
                     lineHeight = 20.sp
@@ -212,13 +212,7 @@ fun RecuperarContraseñaScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Text(
-                    text = "Si no ves el correo en los próximos 5 minutos, verifica tu carpeta de spam.",
-                    fontSize = 12.sp,
-                    color = GrayMedium.copy(alpha = 0.8f),
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodySmall
-                )
+
 
                 Spacer(modifier = Modifier.height(40.dp))
 
