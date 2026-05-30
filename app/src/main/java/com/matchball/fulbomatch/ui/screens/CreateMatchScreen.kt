@@ -303,7 +303,16 @@ fun CreateMatchScreen(
                 colors = formTextFieldColors(colors)
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            MockLocationButton(
+                colors = colors,
+                onClick = {
+                    location = "Caballito, CABA"
+                }
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
 
             FormLabel(
                 text = "Precio por jugador",
@@ -463,6 +472,36 @@ fun CreateMatchScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+}
+
+@Composable
+private fun MockLocationButton(
+    colors: CreateMatchColors,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(vertical = 2.dp)
+            .semantics { contentDescription = "Usar mi ubicación actual" },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.Place,
+            contentDescription = null,
+            tint = colors.accent,
+            modifier = Modifier.size(17.dp)
+        )
+
+        Spacer(modifier = Modifier.width(5.dp))
+
+        Text(
+            text = "Usar mi ubicación actual",
+            color = colors.accent,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
