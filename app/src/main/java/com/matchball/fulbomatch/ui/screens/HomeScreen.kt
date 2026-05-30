@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -42,6 +43,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,9 +61,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.components.MoonIconButton
-import com.matchball.fulbomatch.ui.theme.GrayMedium
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
 
@@ -76,7 +78,8 @@ data class MockMatch(
     val status: String,
     val almostFull: Boolean,
     val imageRes: Int,
-    val tags: List<String>
+    val tags: List<String>,
+    val distance: String? = null
 ) {
     val dateTime: String
         get() = "$date $time"
@@ -94,7 +97,8 @@ val mockMatches = listOf(
         status = "ABIERTO",
         almostFull = false,
         imageRes = R.drawable.cancha,
-        tags = listOf("Césped Natural", "Fútbol 5")
+        tags = listOf("Césped Natural", "Fútbol 5"),
+        distance = "3.5 km"
     ),
     MockMatch(
         id = "2",
@@ -107,7 +111,8 @@ val mockMatches = listOf(
         status = "CASI LLENO",
         almostFull = true,
         imageRes = R.drawable.cancha,
-        tags = listOf("Sintético")
+        tags = listOf("Sintético"),
+        distance = "0.5 km"
     )
 )
 
@@ -123,6 +128,8 @@ fun HomeScreen(
 ) {
     var searchText by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Todos") }
+    var selectedLocation by remember { mutableStateOf("Cerca de Caballito, CABA") }
+    var showLocationDialog by remember { mutableStateOf(false) }
 
     val colors = homeColors(isDarkMode)
 
@@ -191,8 +198,18 @@ fun HomeScreen(
                 }
 
                 item {
+                    LocationInfoRow(
+                        selectedLocation = selectedLocation,
+                        colors = colors,
+                        onChangeLocationClick = {
+                            showLocationDialog = true
+                        }
+                    )
+                }
+
+                item {
                     Text(
-                        text = if (isDarkMode) "Partidos Cercanos" else "Partidos recomendados",
+                        text = "Partidos recomendados",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = colors.textPrimary
@@ -218,6 +235,20 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+
+        if (showLocationDialog) {
+            ChangeLocationDialog(
+                colors = colors,
+                selectedLocation = selectedLocation,
+                onLocationSelected = { newLocation ->
+                    selectedLocation = newLocation
+                    showLocationDialog = false
+                },
+                onDismiss = {
+                    showLocationDialog = false
+                }
+            )
         }
     }
 }
@@ -292,7 +323,6 @@ private fun SearchBar(
                 tint = colors.icon
             )
         },
-
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp),
@@ -332,6 +362,153 @@ private fun FilterRow(
                 colors = colors
             )
         }
+    }
+}
+
+@Composable
+private fun LocationInfoRow(
+    selectedLocation: String,
+    colors: HomeColors,
+    onChangeLocationClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            modifier = Modifier.weight(1f),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.Place,
+                contentDescription = "Ubicación actual",
+                tint = colors.locationText,
+                modifier = Modifier.size(16.dp)
+            )
+
+            Spacer(modifier = Modifier.width(4.dp))
+
+            Text(
+                text = selectedLocation,
+                color = colors.locationText,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        Text(
+            text = "Cambiar",
+            color = colors.textSecondary,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.clickable {
+                onChangeLocationClick()
+            }
+        )
+    }
+}
+
+@Composable
+private fun ChangeLocationDialog(
+    colors: HomeColors,
+    selectedLocation: String,
+    onLocationSelected: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val locations = listOf(
+        "Cerca de Caballito, CABA",
+        "Cerca de Palermo, CABA",
+        "Cerca de Villa Crespo, CABA",
+        "Usar ubicación actual"
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = colors.cardBackground,
+        title = {
+            Text(
+                text = "Cambiar ubicación",
+                color = colors.textPrimary,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Seleccioná una zona para ver partidos recomendados.",
+                    color = colors.textSecondary,
+                    fontSize = 13.sp
+                )
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                locations.forEach { location ->
+                    LocationDialogOption(
+                        text = location,
+                        selected = selectedLocation == location,
+                        colors = colors,
+                        onClick = {
+                            val newLocation = if (location == "Usar ubicación actual") {
+                                "Cerca de Caballito, CABA"
+                            } else {
+                                location
+                            }
+
+                            onLocationSelected(newLocation)
+                        }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(
+                    text = "Cerrar",
+                    color = colors.locationText,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        },
+        properties = DialogProperties(
+            dismissOnClickOutside = true,
+            dismissOnBackPress = true
+        )
+    )
+}
+
+@Composable
+private fun LocationDialogOption(
+    text: String,
+    selected: Boolean,
+    colors: HomeColors,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .clickable { onClick() }
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.Place,
+            contentDescription = null,
+            tint = if (selected) colors.locationText else colors.textSecondary,
+            modifier = Modifier.size(18.dp)
+        )
+
+        Spacer(modifier = Modifier.width(8.dp))
+
+        Text(
+            text = text,
+            color = if (selected) colors.locationText else colors.textPrimary,
+            fontSize = 14.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal
+        )
     }
 }
 
@@ -408,12 +585,25 @@ private fun MatchCard(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text(
-                    text = match.title,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = colors.textPrimary
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = match.title,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = colors.textPrimary,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    match.distance?.let { distance ->
+                        DistanceBadge(
+                            text = distance,
+                            colors = colors
+                        )
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -534,6 +724,25 @@ private fun StatusBadge(
             fontSize = 10.sp,
             color = White,
             fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+        )
+    }
+}
+
+@Composable
+private fun DistanceBadge(
+    text: String,
+    colors: HomeColors
+) {
+    Surface(
+        shape = RoundedCornerShape(10.dp),
+        color = colors.distanceBadgeBackground
+    ) {
+        Text(
+            text = text,
+            fontSize = 11.sp,
+            color = colors.distanceBadgeText,
+            fontWeight = FontWeight.SemiBold,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
         )
     }
@@ -754,7 +963,10 @@ private data class HomeColors(
     val bottomBarBackground: Color,
     val bottomIcon: Color,
     val selectedChipBackground: Color,
-    val selectedChipText: Color
+    val selectedChipText: Color,
+    val locationText: Color,
+    val distanceBadgeBackground: Color,
+    val distanceBadgeText: Color
 )
 
 private fun homeColors(isDarkMode: Boolean): HomeColors {
@@ -774,7 +986,10 @@ private fun homeColors(isDarkMode: Boolean): HomeColors {
             bottomBarBackground = Color(0xFF151515),
             bottomIcon = Color(0xFFC9D1C9),
             selectedChipBackground = Color(0xFF9EF49B),
-            selectedChipText = Color(0xFF111111)
+            selectedChipText = Color(0xFF111111),
+            locationText = Color(0xFF9EF49B),
+            distanceBadgeBackground = Color(0xFFB8F29B),
+            distanceBadgeText = Color(0xFF1E6B2D)
         )
     } else {
         HomeColors(
@@ -792,7 +1007,10 @@ private fun homeColors(isDarkMode: Boolean): HomeColors {
             bottomBarBackground = Color(0xFFF3F1F1),
             bottomIcon = Color(0xFF4F574C),
             selectedChipBackground = GreenPrimary,
-            selectedChipText = White
+            selectedChipText = White,
+            locationText = GreenPrimary,
+            distanceBadgeBackground = Color(0xFFE6F7E7),
+            distanceBadgeText = Color(0xFF1E6B2D)
         )
     }
 }

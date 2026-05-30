@@ -296,10 +296,25 @@ fun EditMatchScreen(
                         tint = colors.icon
                     )
                 },
+                placeholder = {
+                    Text(
+                        text = "Busca una cancha o dirección",
+                        color = colors.textMuted
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(10.dp),
                 singleLine = true,
                 colors = editMatchTextFieldColors(colors)
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            EditMockLocationButton(
+                colors = colors,
+                onClick = {
+                    location = "Cerca de Caballito, CABA"
+                }
             )
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -494,6 +509,35 @@ fun EditMatchScreen(
 
             Spacer(modifier = Modifier.height(36.dp))
         }
+    }
+}
+
+@Composable
+private fun EditMockLocationButton(
+    colors: EditMatchColors,
+    onClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .clickable { onClick() }
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.Place,
+            contentDescription = "Usar mi ubicación actual",
+            tint = colors.accent,
+            modifier = Modifier.size(17.dp)
+        )
+
+        Spacer(modifier = Modifier.width(5.dp))
+
+        Text(
+            text = "Usar mi ubicación actual",
+            color = colors.accent,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
