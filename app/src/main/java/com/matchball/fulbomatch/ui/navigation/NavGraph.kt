@@ -247,17 +247,19 @@ fun NavGraph(
 
         composable(Routes.CreateMatch.route) {
             CrearPartidoScreen(
-                isDarkMode = isDarkMode,
                 onBackClick = {
                     navController.popBackStack()
                 },
                 onPartidoCreado = {
-                    // Cuando se crea el partido en Firebase, volvemos al Home
                     navController.navigate(Routes.Home.route) {
                         popUpTo(Routes.Home.route) { inclusive = true }
                         launchSingleTop = true
                     }
-                }
+                },
+                isDarkMode = isDarkMode,
+                onHomeClick = { navController.navigate(Routes.Home.route) },
+                onMatchesClick = { navController.navigate(Routes.Matches.route) },
+                onProfileClick = { navController.navigate(Routes.Profile.route) }
             )
         }
 

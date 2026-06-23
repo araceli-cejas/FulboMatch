@@ -5,5 +5,9 @@ data class UserProfile(
     val nombre: String = "",
     val email: String = "",
     val posicion: String = "",
-    val nivel: String = ""
+    val nivel: String = "",
+    val phone: String = "",
+    val age: String = "",
+    val zone: String = "",
+    val description: String = ""
 )

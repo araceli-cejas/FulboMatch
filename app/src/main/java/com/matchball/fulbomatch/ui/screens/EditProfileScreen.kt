@@ -67,6 +67,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.matchball.fulbomatch.R
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import com.google.firebase.auth.FirebaseAuth
+import com.matchball.fulbomatch.data.model.UserProfile
 
 private data class EditProfileColors(
     val background: Color,
@@ -142,26 +147,45 @@ fun EditProfileScreen(
     onCreateMatchClick: () -> Unit = {},
     onNotificationsClick: () -> Unit = {},
     isDarkMode: Boolean = false,
-    onToggleDarkMode: () -> Unit = {}
+    onToggleDarkMode: () -> Unit = {},
+    viewModel: com.matchball.fulbomatch.ui.profile.UserViewModel = viewModel() // <- Inyectamos
 ) {
-    var fullName by remember { mutableStateOf("Lucas Fernández") }
-    var email by remember { mutableStateOf("lucasfer@gmail.com") }
-    var phone by remember { mutableStateOf("+34 600 123 456") }
-    var age by remember { mutableStateOf("24") }
-    var zone by remember { mutableStateOf("Caballito, CABA") }
+    val userProfile by viewModel.userProfile.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Variables de estado inicializadas vacías
+    var fullName by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var age by remember { mutableStateOf("") }
+    var zone by remember { mutableStateOf("") }
     var position by remember { mutableStateOf("Arquero") }
-    var description by remember {
-        mutableStateOf("Jugador de equipo, me gusta distribuir el balón y mantener el ritmo en el centro del campo. Disponible los fines de semana.")
+    var description by remember { mutableStateOf("") }
+
+    // Cuando el perfil carga de Firebase, rellenamos los campos
+    LaunchedEffect(userProfile) {
+        userProfile?.let {
+            fullName = it.nombre
+            email = it.email
+            phone = it.phone
+            age = it.age
+            zone = it.zone
+            if (it.posicion.isNotBlank()) position = it.posicion
+            description = it.description
+        }
     }
 
-    val positions = listOf(
-        "Arquero",
-        "Defensor",
-        "Mediocampista",
-        "Delantero"
-    )
+    // Si se guardó con éxito, cerramos la pantalla
+    LaunchedEffect(uiState) {
+        if (uiState is com.matchball.fulbomatch.ui.profile.UserUiState.Success) {
+            viewModel.resetState()
+            onSaveClick() // Vuelve a la pantalla anterior
+        }
+    }
 
+    val positions = listOf("Arquero", "Defensor", "Mediocampista", "Delantero")
     val colors = editProfileColors(isDarkMode)
+
 
     Scaffold(
         bottomBar = {
@@ -383,7 +407,24 @@ fun EditProfileScreen(
             Spacer(modifier = Modifier.height(28.dp))
 
             Button(
-                onClick = onSaveClick,
+                onClick = {
+                    // Obtenemos el ID del usuario directamente de Firebase Auth
+                    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+
+                    if (currentUserId != null) {
+                        val updatedProfile = UserProfile(
+                            id = currentUserId,
+                            nombre = fullName,
+                            email = email,
+                            phone = phone,
+                            age = age,
+                            zone = zone,
+                            posicion = position,
+                            description = description
+                        )
+                        viewModel.updateProfile(updatedProfile)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),

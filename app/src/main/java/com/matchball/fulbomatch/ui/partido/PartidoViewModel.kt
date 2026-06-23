@@ -1,10 +1,12 @@
-package com.matchball.fulbomatch.ui.screens
+package com.matchball.fulbomatch.ui.partido
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.matchball.fulbomatch.data.model.Partido
+import com.matchball.fulbomatch.data.model.UserProfile
 import com.matchball.fulbomatch.data.repository.AuthRepository
 import com.matchball.fulbomatch.data.repository.PartidoRepository
+import com.matchball.fulbomatch.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -19,7 +21,8 @@ sealed class PartidoUiState {
 
 class PartidoViewModel : ViewModel() {
     private val partidoRepository = PartidoRepository()
-    private val authRepository = AuthRepository() // Lo necesitamos para saber quién lo crea
+    private val authRepository = AuthRepository()
+    private val userRepository = UserRepository()
 
     private val _uiState = MutableStateFlow<PartidoUiState>(PartidoUiState.Idle)
     val uiState: StateFlow<PartidoUiState> = _uiState
@@ -32,6 +35,9 @@ class PartidoViewModel : ViewModel() {
         // Al instanciar el ViewModel, cargamos los partidos automáticamente
         loadPartidos()
     }
+
+    private val _jugadoresConfirmados = MutableStateFlow<List<UserProfile>>(emptyList())
+    val jugadoresConfirmados: StateFlow<List<UserProfile>> = _jugadoresConfirmados
 
     fun loadPartidos() {
         viewModelScope.launch {
@@ -141,6 +147,20 @@ class PartidoViewModel : ViewModel() {
                 _uiState.value = PartidoUiState.Success
             } else {
                 _uiState.value = PartidoUiState.Error("Error al cancelar el partido")
+            }
+        }
+    }
+
+    fun cargarJugadoresConfirmados(userIds: List<String>) {
+        viewModelScope.launch {
+            if (userIds.isEmpty()) {
+                _jugadoresConfirmados.value = emptyList()
+                return@launch
+            }
+
+            val result = userRepository.getUsersProfiles(userIds)
+            if (result.isSuccess) {
+                _jugadoresConfirmados.value = result.getOrDefault(emptyList())
             }
         }
     }

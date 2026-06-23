@@ -36,6 +36,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +53,8 @@ import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.getValue
 
 private data class ProfileColors(
     val background: Color,
@@ -133,9 +137,23 @@ fun ProfileScreen(
     onLogoutClick: () -> Unit = {},
     onDeleteAccountClick: () -> Unit = {},
     isDarkMode: Boolean = false,
-    onToggleDarkMode: () -> Unit = {}
+    onToggleDarkMode: () -> Unit = {},
+    viewModel: com.matchball.fulbomatch.ui.profile.UserViewModel = viewModel() // <- Inyectamos el ViewModel
 ) {
     val colors = profileColors(isDarkMode)
+
+    // Escuchamos los datos del usuario logueado
+    val userProfile by viewModel.userProfile.collectAsState()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadCurrentUserProfile()
+    }
+
+    // Variables seguras por si todavía está cargando
+    val nombre = userProfile?.nombre ?: "Cargando..."
+    val posicion = userProfile?.posicion?.takeIf { it.isNotBlank() } ?: "Sin posición"
+    val edad = userProfile?.age?.takeIf { it.isNotBlank() } ?: "--"
+    val zona = userProfile?.zone?.takeIf { it.isNotBlank() } ?: "Sin zona"
 
     Scaffold(
         bottomBar = {
@@ -154,8 +172,7 @@ fun ProfileScreen(
                 .padding(padding)
                 .background(colors.background)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 18.dp, vertical = 12.dp)
-                .semantics { contentDescription = "Pantalla de perfil de usuario" },
+                .padding(horizontal = 18.dp, vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ProfileHeader(
@@ -167,12 +184,13 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            // Usamos un diseño más limpio y minimalista
             ProfileAvatar(colors = colors)
 
             Spacer(modifier = Modifier.height(18.dp))
 
             Text(
-                text = "Lucas Fernández",
+                text = nombre, // <- Nombre real de Firestore
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = colors.textPrimary
@@ -180,7 +198,10 @@ fun ProfileScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            ProfileUserInfo(colors = colors)
+            ProfileUserInfo(posicion = posicion,
+                edad = edad,
+                zona = zona,
+                colors = colors) // <- Posición real
 
             Spacer(modifier = Modifier.height(30.dp))
 
@@ -201,21 +222,21 @@ fun ProfileScreen(
                 iconText = "⚽",
                 title = "Mis partidos",
                 colors = colors,
-                onClick = { onMatchesClick() }
+                onClick = onMatchesClick
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            HorizontalDivider(
-                color = colors.divider,
-                thickness = 1.dp
-            )
+            HorizontalDivider(color = colors.divider, thickness = 1.dp)
 
             Spacer(modifier = Modifier.height(18.dp))
 
             LogoutButton(
                 colors = colors,
-                onClick = onLogoutClick
+                onClick = {
+                    viewModel.logout() // Cerramos sesión en Firebase
+                    onLogoutClick()    // Navegamos al Login
+                }
             )
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -225,13 +246,81 @@ fun ProfileScreen(
                 color = colors.danger,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.clickable {
-                    onDeleteAccountClick()
-                }
+                modifier = Modifier.clickable { onDeleteAccountClick() }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
         }
+    }
+}
+
+// Actualizamos el Avatar a un icono vectorial simple
+@Composable
+private fun ProfileAvatar(colors: ProfileColors) {
+    Surface(
+        modifier = Modifier.size(112.dp),
+        shape = CircleShape,
+        color = colors.avatarBackground,
+        shadowElevation = 0.dp // Removido el sombreado tosco
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = "Avatar de perfil",
+                tint = colors.icon.copy(alpha = 0.5f),
+                modifier = Modifier.size(56.dp)
+            )
+        }
+    }
+}
+
+// Actualizamos la info para recibir la posición dinámica
+@Composable
+private fun ProfileUserInfo(
+    posicion: String,
+    edad: String,
+    zona: String,
+    colors: ProfileColors
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Surface(
+            shape = RoundedCornerShape(6.dp),
+            color = colors.chipBackground
+        ) {
+            Text(
+                text = posicion,
+                fontSize = 13.sp,
+                color = colors.textPrimary,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+
+        Text(
+            text = "  •  $edad años  •  ",
+            fontSize = 15.sp,
+            color = colors.textSecondary
+        )
+
+        Icon(
+            imageVector = Icons.Default.Place,
+            contentDescription = "Ubicación",
+            tint = colors.textSecondary,
+            modifier = Modifier.size(17.dp)
+        )
+
+        Spacer(modifier = Modifier.width(4.dp))
+
+        Text(
+            text = zona,
+            fontSize = 15.sp,
+            color = colors.textSecondary
+        )
     }
 }
 
@@ -282,26 +371,6 @@ private fun ProfileHeader(
 }
 
 
-@Composable
-private fun ProfileAvatar(
-    colors: ProfileColors
-) {
-    Surface(
-        modifier = Modifier.size(112.dp),
-        shape = CircleShape,
-        color = colors.avatarBackground,
-        shadowElevation = 4.dp
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.hombre),
-            contentDescription = "Foto de perfil",
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(CircleShape),
-            contentScale = ContentScale.Crop
-        )
-    }
-}
 
 @Composable
 private fun ProfileUserInfo(

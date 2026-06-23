@@ -69,6 +69,7 @@ import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
+import com.matchball.fulbomatch.ui.partido.PartidoViewModel
 
 // Mantenemos la estructura de la tarjeta para la UI
 data class MockMatch(

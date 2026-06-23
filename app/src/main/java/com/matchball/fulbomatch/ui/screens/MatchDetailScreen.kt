@@ -1,5 +1,6 @@
 package com.matchball.fulbomatch.ui.screens
 
+import com.matchball.fulbomatch.data.model.UserProfile
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import com.matchball.fulbomatch.R
@@ -46,6 +47,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,6 +68,7 @@ import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
+import com.matchball.fulbomatch.ui.partido.PartidoViewModel
 
 private data class MatchDetailColors(
     val background: Color,
@@ -138,7 +141,9 @@ fun MatchDetailScreen(
     onEditMatchClick: (String) -> Unit = {},
     onStatisticsClick: (String) -> Unit = {},
     onNotificationsClick: () -> Unit = {},
-
+    isUserJoined: Boolean = false,
+    isOrganizer: Boolean = false,
+    isFinished: Boolean = false,
     isDarkMode: Boolean = false,
     onToggleDarkMode: () -> Unit = {},
     viewModel: PartidoViewModel = viewModel()
@@ -148,12 +153,21 @@ fun MatchDetailScreen(
     val partidoFirebase = partidos.find { it.id == matchId }
     val currentUserId = viewModel.currentUserId
 
+    // --- NUEVO: Escuchar y cargar los perfiles reales ---
+    val jugadoresProfiles by viewModel.jugadoresConfirmados.collectAsState()
+
+    LaunchedEffect(partidoFirebase?.jugadoresConfirmados) {
+        partidoFirebase?.jugadoresConfirmados?.let { ids ->
+            viewModel.cargarJugadoresConfirmados(ids)
+        }
+    }
+
     // 2. Calculamos dinámicamente los roles
     val isOrganizer = partidoFirebase?.creadorId == currentUserId
     val isUserJoined = partidoFirebase?.jugadoresConfirmados?.contains(currentUserId) == true
-    val isFinished = false // En esta fase asumimos que no están finalizados
+    val isFinished = false
 
-    // 3. Mapeamos a MockMatch para que el diseño siga funcionando
+    // 3. Mapeamos a MockMatch
     val match = partidoFirebase?.let { p ->
         MockMatch(
             id = p.id,
@@ -162,19 +176,20 @@ fun MatchDetailScreen(
             time = p.hora,
             location = p.lugar,
             players = "${p.jugadoresConfirmados.size}/${p.maxJugadores}",
-            level = p.nivel,                // <- Usa el de Firebase
+            level = p.nivel,
             status = if (p.jugadoresConfirmados.size >= p.maxJugadores) "LLENO" else "ABIERTO",
             almostFull = (p.maxJugadores - p.jugadoresConfirmados.size) in 1..2,
             imageRes = R.drawable.cancha,
-            tags = listOf(p.superficie),    // <- Usa el de Firebase
+            tags = listOf(p.superficie),
             distance = null,
-            price = p.precio,               // <- Usa el de Firebase
-            surface = p.superficie,         // <- Usa el de Firebase
-            description = p.descripcion     // <- Usa el de Firebase
+            price = p.precio,
+            surface = p.superficie,
+            description = p.descripcion
         )
     }
 
     val colors = matchDetailColors(isDarkMode)
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -263,7 +278,10 @@ fun MatchDetailScreen(
 
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    OrganizerCard(colors = colors)
+                    OrganizerCard(
+                        organizerProfile = jugadoresProfiles.find { it.id == partidoFirebase?.creadorId },
+                        colors = colors
+                    )
 
                     Spacer(modifier = Modifier.height(20.dp))
 
@@ -279,7 +297,9 @@ fun MatchDetailScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     ConfirmedPlayersCard(
-                        match = match, // Ahora muestra los cupos reales
+                        match = match,
+                        realPlayers = jugadoresProfiles,
+                        organizerId = partidoFirebase?.creadorId,
                         colors = colors
                     )
 
@@ -492,8 +512,11 @@ private fun DetailSmallBox(
 
 @Composable
 private fun OrganizerCard(
+    organizerProfile: UserProfile?,
     colors: MatchDetailColors
 ) {
+    val organizerName = organizerProfile?.nombre ?: "Cargando..."
+
     DetailSectionCard(colors = colors) {
         Text(
             text = "Organizador",
@@ -531,7 +554,7 @@ private fun OrganizerCard(
 
             Column {
                 Text(
-                    text = "Martín G.",
+                    text = organizerName,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = colors.textPrimary
@@ -549,10 +572,92 @@ private fun OrganizerCard(
                     Spacer(modifier = Modifier.width(4.dp))
 
                     Text(
-                        text = "4.8 (12 partidos)",
+                        text = "4.8 (12 partidos)", // Esto quedará mockeado por ahora
                         color = colors.textSecondary,
                         fontSize = 15.sp
                     )
+                }
+            }
+        }
+    }
+}
+@Composable
+private fun ConfirmedPlayersCard(
+    match: MockMatch,
+    realPlayers: List<UserProfile>,
+    organizerId: String?,
+    colors: MatchDetailColors
+) {
+    val maxPlayers = match.players.substringAfter("/").trim().toIntOrNull() ?: 10
+    val currentPlayersCount = realPlayers.size
+
+    DetailSectionCard(colors = colors) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Jugadores Confirmados",
+                fontSize = 21.sp,
+                fontWeight = FontWeight.Bold,
+                color = colors.textPrimary,
+                modifier = Modifier.weight(1f)
+            )
+
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = colors.innerCard
+            ) {
+                Text(
+                    text = "$currentPlayersCount / $maxPlayers",
+                    color = colors.accent,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(22.dp))
+
+        // Nueva lógica para dibujar la grilla sin errores
+        val slotsPerRow = 5
+        val totalRows = (maxPlayers + slotsPerRow - 1) / slotsPerRow
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            for (rowIndex in 0 until totalRows) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    for (colIndex in 0 until slotsPerRow) {
+                        val playerIndex = (rowIndex * slotsPerRow) + colIndex
+
+                        if (playerIndex < maxPlayers) {
+                            // ACÁ ESTÁ EL ARREGLO:
+                            // Si el índice es menor a la cantidad de jugadores reales, dibujamos al jugador
+                            if (playerIndex < realPlayers.size) {
+                                val player = realPlayers[playerIndex]
+                                val isOrganizer = player.id == organizerId
+                                val firstName = player.nombre.split(" ").firstOrNull() ?: "Jugador"
+
+                                PlayerSlot(
+                                    name = firstName,
+                                    active = true,
+                                    organizer = isOrganizer,
+                                    colors = colors
+                                )
+                            } else {
+                                // Si ya no hay jugadores reales, rellenamos con "Libre"
+                                PlayerSlot(name = "Libre", active = false, colors = colors)
+                            }
+                        } else {
+                            // Relleno invisible para mantener la grilla alineada si maxPlayers no es múltiplo de 5
+                            Spacer(modifier = Modifier.width(56.dp))
+                        }
+                    }
                 }
             }
         }
@@ -708,70 +813,6 @@ private fun RuleItem(
     }
 }
 
-@Composable
-private fun ConfirmedPlayersCard(
-    match: MockMatch,
-    colors: MatchDetailColors
-) {
-    val currentPlayers = getCurrentPlayers(match.players)
-    val maxPlayers = getMaxPlayers(match.players)
-
-    DetailSectionCard(colors = colors) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Jugadores Confirmados",
-                fontSize = 21.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.textPrimary,
-                modifier = Modifier.weight(1f)
-            )
-
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = colors.innerCard
-            ) {
-                Text(
-                    text = "$currentPlayers / $maxPlayers",
-                    color = colors.accent,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(22.dp))
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                PlayerSlot(name = "Martín", active = true, organizer = true, colors = colors)
-                PlayerSlot(name = "Leo M.", active = true, colors = colors)
-                PlayerSlot(name = "Alej.", active = true, letter = "A", colors = colors)
-                PlayerSlot(name = "Nico", active = true, colors = colors)
-                PlayerSlot(name = "Fede", active = true, colors = colors)
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                PlayerSlot(name = "Tomi", active = true, colors = colors)
-                PlayerSlot(name = "Juan", active = true, colors = colors)
-                PlayerSlot(name = "Lucas", active = true, colors = colors)
-                PlayerSlot(name = "Libre", active = false, colors = colors)
-                PlayerSlot(name = "Libre", active = false, colors = colors)
-            }
-        }
-    }
-}
 
 @Composable
 private fun PlayerSlot(

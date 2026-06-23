@@ -3,7 +3,7 @@ package com.matchball.fulbomatch.ui.screens
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
-import com.matchball.fulbomatch.ui.screens.PartidoViewModel
+import com.matchball.fulbomatch.ui.partido.PartidoViewModel
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
+import com.matchball.fulbomatch.ui.partido.PartidoUiState
 
 private data class EditMatchColors(
     val background: Color,
@@ -183,7 +184,7 @@ fun EditMatchScreen(
 
     // 5. Escuchamos si se guardó o borró con éxito para navegar
     LaunchedEffect(uiState) {
-        if (uiState is com.matchball.fulbomatch.ui.screens.PartidoUiState.Success) {
+        if (uiState is PartidoUiState.Success) {
             viewModel.resetState()
             onSaveClick() // Esto te devuelve a la lista de partidos
         }
