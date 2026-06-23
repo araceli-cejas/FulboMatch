@@ -12,7 +12,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.matchball.fulbomatch.ui.auth.AuthViewModel
 import com.matchball.fulbomatch.ui.navigation.NavGraph
 import com.matchball.fulbomatch.ui.theme.FulbomatchTheme
 
@@ -32,6 +34,10 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
+
+                    val authViewModel: AuthViewModel = viewModel()
+
+                    val startDestination = if (authViewModel.isLoggedIn) "home" else "login"
 
                     NavGraph(
                         navController = navController,

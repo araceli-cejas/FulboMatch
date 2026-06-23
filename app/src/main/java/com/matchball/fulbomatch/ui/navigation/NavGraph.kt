@@ -6,11 +6,11 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.matchball.fulbomatch.ui.auth.LoginScreen
 import com.matchball.fulbomatch.ui.screens.CreateMatchScreen
 import com.matchball.fulbomatch.ui.screens.EditMatchScreen
 import com.matchball.fulbomatch.ui.screens.EditProfileScreen
 import com.matchball.fulbomatch.ui.screens.HomeScreen
-import com.matchball.fulbomatch.ui.screens.LoginScreen
 import com.matchball.fulbomatch.ui.screens.MatchDetailScreen
 import com.matchball.fulbomatch.ui.screens.MatchesScreen
 import com.matchball.fulbomatch.ui.screens.NotificationsScreen
@@ -51,10 +51,10 @@ fun NavGraph(
                         }
                     }
                 },
-                onRegisterClick = {
+                onNavigateToRegister = {
                     navController.navigate(Routes.Register.route)
                 },
-                onRecuperarClick = {
+                onNavigateToRecover = {
                     navController.navigate(Routes.RecuperarContraseña.route)
                 }
             )

@@ -29,7 +29,10 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matchball.fulbomatch.R
+import com.matchball.fulbomatch.ui.auth.AuthUiState
+import com.matchball.fulbomatch.ui.auth.AuthViewModel
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.GrayMedium
 import com.matchball.fulbomatch.ui.theme.White
@@ -37,7 +40,8 @@ import com.matchball.fulbomatch.ui.theme.White
 @Composable
 fun RegisterScreen(
     onRegisterSuccess: () -> Unit,
-    onBackClick: () -> Unit
+    onBackClick: () -> Unit,
+    viewModel: AuthViewModel = viewModel() // <- Agregamos el ViewModel
 ) {
     var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -46,6 +50,20 @@ fun RegisterScreen(
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var acceptedTerms by remember { mutableStateOf(false) }
+
+    // Estado de error local para validaciones
+    var localError by remember { mutableStateOf<String?>(null) }
+
+    // Observar el estado de Firebase
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Manejar el éxito del registro
+    LaunchedEffect(uiState) {
+        if (uiState is AuthUiState.Success) {
+            viewModel.resetState()
+            onRegisterSuccess()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -80,6 +98,7 @@ fun RegisterScreen(
                     .semantics { contentDescription = "Formulario de registro" },
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // ... (Mantengo tu UI de Logo, Textos y Nombre completo igual)
                 Image(
                     painter = painterResource(id = R.drawable.logo_completo),
                     contentDescription = "Logo FulboMatch",
@@ -110,7 +129,6 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(28.dp))
 
-                // Nombre completo
                 Text(
                     text = "Nombre completo",
                     fontSize = 14.sp,
@@ -146,7 +164,6 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Email
                 Text(
                     text = "Email",
                     fontSize = 14.sp,
@@ -159,7 +176,7 @@ fun RegisterScreen(
 
                 OutlinedTextField(
                     value = email,
-                    onValueChange = { email = it },
+                    onValueChange = { email = it; localError = null }, // Limpiar error al tipear
                     placeholder = { Text("tu@email.com") },
                     leadingIcon = {
                         Icon(Icons.Default.Email, contentDescription = "Ícono de email")
@@ -183,7 +200,6 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Contraseña
                 Text(
                     text = "Contraseña",
                     fontSize = 14.sp,
@@ -196,7 +212,7 @@ fun RegisterScreen(
 
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { password = it },
+                    onValueChange = { password = it; localError = null }, // Limpiar error al tipear
                     placeholder = { Text("Mínimo 8 caracteres") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -209,22 +225,9 @@ fun RegisterScreen(
                         PasswordVisualTransformation()
                     },
                     trailingIcon = {
-                        IconButton(
-                            onClick = { passwordVisible = !passwordVisible },
-                            modifier = Modifier.semantics {
-                                contentDescription = if (passwordVisible) {
-                                    "Ocultar contraseña"
-                                } else {
-                                    "Mostrar contraseña"
-                                }
-                            }
-                        ) {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(
-                                imageVector = if (passwordVisible) {
-                                    Icons.Default.Visibility
-                                } else {
-                                    Icons.Default.VisibilityOff
-                                },
+                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                 contentDescription = null
                             )
                         }
@@ -243,7 +246,6 @@ fun RegisterScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Confirmar contraseña
                 Text(
                     text = "Confirmar Contraseña",
                     fontSize = 14.sp,
@@ -256,7 +258,7 @@ fun RegisterScreen(
 
                 OutlinedTextField(
                     value = confirmPassword,
-                    onValueChange = { confirmPassword = it },
+                    onValueChange = { confirmPassword = it; localError = null }, // Limpiar error al tipear
                     placeholder = { Text("Repetí tu contraseña") },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -269,22 +271,9 @@ fun RegisterScreen(
                         PasswordVisualTransformation()
                     },
                     trailingIcon = {
-                        IconButton(
-                            onClick = { confirmPasswordVisible = !confirmPasswordVisible },
-                            modifier = Modifier.semantics {
-                                contentDescription = if (confirmPasswordVisible) {
-                                    "Ocultar contraseña"
-                                } else {
-                                    "Mostrar contraseña"
-                                }
-                            }
-                        ) {
+                        IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
                             Icon(
-                                imageVector = if (confirmPasswordVisible) {
-                                    Icons.Default.Visibility
-                                } else {
-                                    Icons.Default.VisibilityOff
-                                },
+                                imageVector = if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
                                 contentDescription = null
                             )
                         }
@@ -313,12 +302,9 @@ fun RegisterScreen(
                     Checkbox(
                         checked = acceptedTerms,
                         onCheckedChange = { acceptedTerms = it },
-                        colors = CheckboxDefaults.colors(
-                            checkedColor = GreenPrimary
-                        ),
+                        colors = CheckboxDefaults.colors(checkedColor = GreenPrimary),
                         modifier = Modifier.padding(top = 4.dp)
                     )
-
                     Text(
                         text = "Acepto los Términos y Condiciones y la Política de Privacidad.",
                         fontSize = 12.sp,
@@ -327,27 +313,66 @@ fun RegisterScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                // Botón crear cuenta
+                // Mostrar errores (locales o de Firebase)
+                if (localError != null) {
+                    Text(
+                        text = localError!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                } else if (uiState is AuthUiState.Error) {
+                    Text(
+                        text = (uiState as AuthUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Botón crear cuenta conectado a Firebase
                 Button(
-                    onClick = { onRegisterSuccess() },
+                    onClick = {
+                        when {
+                            name.isBlank() -> localError = "Ingresá tu nombre"
+                            email.isBlank() -> localError = "Ingresá un email válido"
+                            password.length < 6 -> localError = "La contraseña debe tener al menos 6 caracteres" // Regla de Firebase
+                            password != confirmPassword -> localError = "Las contraseñas no coinciden"
+                            else -> {
+                                localError = null
+                                // Llamamos al ViewModel para crear en Firebase
+                                viewModel.register(email, password)
+                                // Ojo: Aca todavia no guardamos el 'name', eso lo haremos en Firestore más adelante
+                            }
+                        }
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
                         .semantics { contentDescription = "Botón para crear cuenta" },
                     shape = RoundedCornerShape(26.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = GreenPrimary
-                    ),
-                    enabled = acceptedTerms
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
+                    enabled = acceptedTerms && uiState !is AuthUiState.Loading // Deshabilitar si está cargando
                 ) {
-                    Text(
-                        text = "Crear cuenta →",
-                        fontSize = 16.sp,
-                        color = White,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    if (uiState is AuthUiState.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = White
+                        )
+                    } else {
+                        Text(
+                            text = "Crear cuenta →",
+                            fontSize = 16.sp,
+                            color = White,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -373,7 +398,6 @@ fun RegisterScreen(
                 }
             }
         }
-
         Spacer(modifier = Modifier.height(24.dp))
     }
 }

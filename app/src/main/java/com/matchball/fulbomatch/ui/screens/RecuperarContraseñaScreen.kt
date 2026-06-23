@@ -24,7 +24,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matchball.fulbomatch.R
+import com.matchball.fulbomatch.ui.auth.AuthUiState
+import com.matchball.fulbomatch.ui.auth.AuthViewModel
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.GrayMedium
 import com.matchball.fulbomatch.ui.theme.White
@@ -33,10 +36,15 @@ import com.matchball.fulbomatch.ui.theme.White
 @Composable
 fun RecuperarContraseñaScreen(
     onBackClick: () -> Unit,
-    onSendClick: (String) -> Unit = {}
+    viewModel: AuthViewModel = viewModel() // <- Inyectamos el ViewModel
 ) {
     var email by remember { mutableStateOf("") }
-    var emailSent by remember { mutableStateOf(false) }
+
+    // Observamos el estado para saber si se envió el mail
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Mostramos la pantalla de éxito si Firebase confirma el envío
+    val emailSent = uiState is AuthUiState.Success
 
     Column(
         modifier = Modifier
@@ -56,7 +64,10 @@ fun RecuperarContraseñaScreen(
             },
             navigationIcon = {
                 IconButton(
-                    onClick = onBackClick,
+                    onClick = {
+                        viewModel.resetState() // Limpiar estado al salir
+                        onBackClick()
+                    },
                     modifier = Modifier.semantics { contentDescription = "Volver atrás" }
                 ) {
                     Icon(
@@ -77,7 +88,7 @@ fun RecuperarContraseñaScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (!emailSent) {
-                // Icono
+                // ... (Icono, Título y Descripción quedan igual)
                 Box(
                     modifier = Modifier
                         .size(100.dp)
@@ -97,7 +108,6 @@ fun RecuperarContraseñaScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Título
                 Text(
                     text = "¿Olvidaste tu contraseña?",
                     fontSize = 24.sp,
@@ -108,7 +118,6 @@ fun RecuperarContraseñaScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // Descripción
                 Text(
                     text = "No te preocupes. Ingresá el correo electrónico asociado a tu cuenta y te enviaremos un enlace para restablecerla.",
                     fontSize = 14.sp,
@@ -119,7 +128,6 @@ fun RecuperarContraseñaScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                // Campo de email
                 Text(
                     text = "Correo electrónico",
                     fontSize = 14.sp,
@@ -149,14 +157,25 @@ fun RecuperarContraseñaScreen(
                     )
                 )
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Botón enviar
+                // Mostrar error de Firebase si falla el envío
+                if (uiState is AuthUiState.Error) {
+                    Text(
+                        text = (uiState as AuthUiState.Error).message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+
+                // Botón enviar conectado a Firebase
                 Button(
                     onClick = {
                         if (email.isNotEmpty()) {
-                            onSendClick(email)
-                            emailSent = true
+                            viewModel.resetPassword(email)
                         }
                     },
                     modifier = Modifier
@@ -165,12 +184,19 @@ fun RecuperarContraseñaScreen(
                         .semantics { contentDescription = "Botón para enviar enlace de recuperación" },
                     shape = RoundedCornerShape(26.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
-                    enabled = email.isNotEmpty()
+                    enabled = email.isNotEmpty() && uiState !is AuthUiState.Loading
                 ) {
-                    Text("Enviar enlace", fontSize = 16.sp, color = White, fontWeight = FontWeight.SemiBold)
+                    if (uiState is AuthUiState.Loading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = White
+                        )
+                    } else {
+                        Text("Enviar enlace", fontSize = 16.sp, color = White, fontWeight = FontWeight.SemiBold)
+                    }
                 }
             } else {
-                // Pantalla de confirmación
+                // ... (Pantalla de confirmación queda igual)
                 Spacer(modifier = Modifier.height(60.dp))
 
                 Box(
@@ -210,15 +236,13 @@ fun RecuperarContraseñaScreen(
                     lineHeight = 20.sp
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-
-
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // Botón volver
                 Button(
-                    onClick = onBackClick,
+                    onClick = {
+                        viewModel.resetState() // Limpiar el estado
+                        onBackClick()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
