@@ -1,6 +1,7 @@
 package com.matchball.fulbomatch.ui.partido
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.matchball.fulbomatch.data.model.Partido
 import com.matchball.fulbomatch.data.model.UserProfile
@@ -9,9 +10,10 @@ import com.matchball.fulbomatch.data.repository.PartidoRepository
 import com.matchball.fulbomatch.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 
-// Estados para manejar la UI de carga y errores
 sealed class PartidoUiState {
     object Idle : PartidoUiState()
     object Loading : PartidoUiState()
@@ -19,37 +21,52 @@ sealed class PartidoUiState {
     data class Error(val message: String) : PartidoUiState()
 }
 
-class PartidoViewModel : ViewModel() {
-    private val partidoRepository = PartidoRepository()
+class PartidoViewModel(application: Application) : AndroidViewModel(application) {
+
+    // Pasamos 'application' para que el repositorio inicialice Room sin problemas
+    private val partidoRepository = PartidoRepository(application)
     private val authRepository = AuthRepository()
     private val userRepository = UserRepository()
 
     private val _uiState = MutableStateFlow<PartidoUiState>(PartidoUiState.Idle)
-    val uiState: StateFlow<PartidoUiState> = _uiState
+    val uiState: StateFlow<PartidoUiState> = _uiState.asStateFlow()
 
-    // Lista de partidos disponibles
     private val _partidos = MutableStateFlow<List<Partido>>(emptyList())
-    val partidos: StateFlow<List<Partido>> = _partidos
+    val partidos: StateFlow<List<Partido>> = _partidos.asStateFlow()
+
+    private val _jugadoresConfirmados = MutableStateFlow<List<UserProfile>>(emptyList())
+    val jugadoresConfirmados: StateFlow<List<UserProfile>> = _jugadoresConfirmados.asStateFlow()
+
+    val currentUserId: String? get() = authRepository.currentUser?.uid
 
     init {
-        // Al instanciar el ViewModel, cargamos los partidos automáticamente
+        // --- CONEXIÓN ROOM OBLIGATORIA ---
+        // Nos quedamos escuchando la base de datos local de forma permanente.
+        // Si Room cambia (porque agregamos, editamos o sincronizamos), la UI se entera sola.
+        viewModelScope.launch {
+            partidoRepository.partidosLocalFlow.collect { listaPartidos ->
+                _partidos.value = listaPartidos
+            }
+        }
+        // Hacemos una carga inicial automática al abrir la app
         loadPartidos()
     }
 
-    private val _jugadoresConfirmados = MutableStateFlow<List<UserProfile>>(emptyList())
-    val jugadoresConfirmados: StateFlow<List<UserProfile>> = _jugadoresConfirmados
-
+    // Cambiamos la lógica: Ahora carga significa "sincronizar Firebase con Room"
     fun loadPartidos() {
         viewModelScope.launch {
             _uiState.value = PartidoUiState.Loading
-            val result = partidoRepository.getPartidos()
+            val result = partidoRepository.refreshPartidos()
             if (result.isSuccess) {
-                _partidos.value = result.getOrDefault(emptyList())
                 _uiState.value = PartidoUiState.Idle
             } else {
-                _uiState.value = PartidoUiState.Error(result.exceptionOrNull()?.message ?: "Error al cargar los partidos")
+                _uiState.value = PartidoUiState.Error("Error al sincronizar datos con la nube")
             }
         }
+    }
+
+    fun resetState() {
+        _uiState.value = PartidoUiState.Idle
     }
 
     fun crearPartido(titulo: String, fecha: String, hora: String, lugar: String, maxJugadores: Int) {
@@ -62,18 +79,20 @@ class PartidoViewModel : ViewModel() {
                 return@launch
             }
 
-            // Acá es donde definimos 'nuevoPartido'
+            // Generamos un ID único con UUID para evitar que Room pise partidos vacíos
+            val idUnico = UUID.randomUUID().toString()
+
             val nuevoPartido = Partido(
+                id = idUnico,
                 titulo = titulo,
                 creadorId = currentUser.uid,
                 fecha = fecha,
                 hora = hora,
                 lugar = lugar,
                 maxJugadores = maxJugadores,
-                jugadoresConfirmados = listOf(currentUser.uid) // El creador se suma automáticamente
+                jugadoresConfirmados = listOf(currentUser.uid)
             )
 
-            // Y acá lo guardamos en Firebase
             val result = partidoRepository.createPartido(nuevoPartido)
 
             if (result.isSuccess) {
@@ -84,52 +103,11 @@ class PartidoViewModel : ViewModel() {
         }
     }
 
-    fun resetState() {
-        _uiState.value = PartidoUiState.Idle
-    }
-
-    // Obtenemos el ID del usuario actual
-    val currentUserId: String? get() = authRepository.currentUser?.uid
-
-    // Función para sumarse (Agrega el ID al array en Firestore)
-    fun sumarseAPartido(partidoId: String) {
-        viewModelScope.launch {
-            _uiState.value = PartidoUiState.Loading
-            currentUserId?.let { uid ->
-                val result = partidoRepository.joinPartido(partidoId, uid)
-                if (result.isSuccess) {
-                    _uiState.value = PartidoUiState.Success
-                    loadPartidos() // Recargamos para actualizar los cupos
-                } else {
-                    _uiState.value = PartidoUiState.Error("Error al sumarse")
-                }
-            }
-        }
-    }
-
-    // Función para bajarse (Quita el ID del array en Firestore)
-    fun bajarseDePartido(partidoId: String) {
-        viewModelScope.launch {
-            _uiState.value = PartidoUiState.Loading
-            currentUserId?.let { uid ->
-                val result = partidoRepository.leavePartido(partidoId, uid)
-                if (result.isSuccess) {
-                    _uiState.value = PartidoUiState.Success
-                    loadPartidos() // Recargamos para liberar el cupo
-                } else {
-                    _uiState.value = PartidoUiState.Error("Error al bajarse")
-                }
-            }
-        }
-    }
-
-    // Guardar los cambios editados
     fun actualizarPartido(partidoActualizado: Partido) {
         viewModelScope.launch {
             _uiState.value = PartidoUiState.Loading
             val result = partidoRepository.updatePartido(partidoActualizado)
             if (result.isSuccess) {
-                // Solo dejamos el Success para que la UI navegue para atrás
                 _uiState.value = PartidoUiState.Success
             } else {
                 _uiState.value = PartidoUiState.Error("Error al actualizar el partido")
@@ -137,16 +115,42 @@ class PartidoViewModel : ViewModel() {
         }
     }
 
-    // Cancelar/Borrar partido
     fun borrarPartido(partidoId: String) {
         viewModelScope.launch {
             _uiState.value = PartidoUiState.Loading
             val result = partidoRepository.deletePartido(partidoId)
             if (result.isSuccess) {
-                // Solo dejamos el Success para que la UI navegue para atrás
                 _uiState.value = PartidoUiState.Success
             } else {
                 _uiState.value = PartidoUiState.Error("Error al cancelar el partido")
+            }
+        }
+    }
+
+    fun sumarseAPartido(partidoId: String) {
+        viewModelScope.launch {
+            _uiState.value = PartidoUiState.Loading
+            currentUserId?.let { uid ->
+                val result = partidoRepository.joinPartido(partidoId, uid)
+                if (result.isSuccess) {
+                    _uiState.value = PartidoUiState.Success
+                } else {
+                    _uiState.value = PartidoUiState.Error("Error al sumarse al partido")
+                }
+            }
+        }
+    }
+
+    fun bajarseDePartido(partidoId: String) {
+        viewModelScope.launch {
+            _uiState.value = PartidoUiState.Loading
+            currentUserId?.let { uid ->
+                val result = partidoRepository.leavePartido(partidoId, uid)
+                if (result.isSuccess) {
+                    _uiState.value = PartidoUiState.Success
+                } else {
+                    _uiState.value = PartidoUiState.Error("Error al bajarse del partido")
+                }
             }
         }
     }
