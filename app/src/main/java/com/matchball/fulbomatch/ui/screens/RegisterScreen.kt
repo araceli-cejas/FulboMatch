@@ -347,7 +347,7 @@ fun RegisterScreen(
                             else -> {
                                 localError = null
                                 // Llamamos al ViewModel para crear en Firebase
-                                viewModel.register(email, password)
+                                viewModel.register(email, password, name)
                                 // Ojo: Aca todavia no guardamos el 'name', eso lo haremos en Firestore más adelante
                             }
                         }

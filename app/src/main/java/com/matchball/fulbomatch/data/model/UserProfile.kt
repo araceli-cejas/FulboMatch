@@ -1,0 +1,9 @@
+package com.matchball.fulbomatch.data.model
+
+data class UserProfile(
+    val id: String = "",
+    val nombre: String = "",
+    val email: String = "",
+    val posicion: String = "",
+    val nivel: String = ""
+)
