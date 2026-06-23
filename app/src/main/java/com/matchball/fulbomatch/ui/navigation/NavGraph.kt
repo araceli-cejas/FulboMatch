@@ -7,7 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.matchball.fulbomatch.ui.auth.LoginScreen
-import com.matchball.fulbomatch.ui.screens.CreateMatchScreen
+import com.matchball.fulbomatch.ui.screens.CrearPartidoScreen
 import com.matchball.fulbomatch.ui.screens.EditMatchScreen
 import com.matchball.fulbomatch.ui.screens.EditProfileScreen
 import com.matchball.fulbomatch.ui.screens.HomeScreen
@@ -167,9 +167,6 @@ fun NavGraph(
 
             MatchDetailScreen(
                 matchId = matchId,
-                isUserJoined = isUserJoined,
-                isOrganizer = isOrganizer,
-                isFinished = isFinished,
                 isDarkMode = isDarkMode,
                 onToggleDarkMode = onToggleDarkMode,
                 onBackClick = {
@@ -249,23 +246,15 @@ fun NavGraph(
         }
 
         composable(Routes.CreateMatch.route) {
-            CreateMatchScreen(
+            CrearPartidoScreen(
                 isDarkMode = isDarkMode,
-                onToggleDarkMode = onToggleDarkMode,
-                onMatchCreated = {
+                onBackClick = {
                     navController.popBackStack()
                 },
-                onBackClick = {
-                    navController.navigate(Routes.Home.route)
-                },
-                onProfileClick = {
-                    navController.navigate(Routes.Profile.route)
-                },
-                onMatchesClick = {
-                    navController.navigate(Routes.Matches.route)
-                },
-                onNotificationsClick = {
-                    navController.navigate(Routes.Notifications.route) {
+                onPartidoCreado = {
+                    // Cuando se crea el partido en Firebase, volvemos al Home
+                    navController.navigate(Routes.Home.route) {
+                        popUpTo(Routes.Home.route) { inclusive = true }
                         launchSingleTop = true
                     }
                 }

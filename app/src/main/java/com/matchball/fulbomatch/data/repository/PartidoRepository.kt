@@ -65,4 +65,14 @@ class PartidoRepository {
             Result.failure(e)
         }
     }
+
+    // Actualizar un partido existente (La "U" del CRUD)
+    suspend fun updatePartido(partido: Partido): Result<Unit> {
+        return try {
+            partidosCollection.document(partido.id).set(partido).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

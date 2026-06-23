@@ -45,6 +45,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,11 +64,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
 
+// Mantenemos la estructura de la tarjeta para la UI
 data class MockMatch(
     val id: String,
     val title: String,
@@ -79,42 +83,15 @@ data class MockMatch(
     val almostFull: Boolean,
     val imageRes: Int,
     val tags: List<String>,
-    val distance: String? = null
+    val distance: String? = null,
+    val price: String = "1500",
+    val surface: String = "Sintético",
+    val description: String = ""
 ) {
     val dateTime: String
         get() = "$date $time"
 }
 
-val mockMatches = listOf(
-    MockMatch(
-        id = "1",
-        title = "Fútbol 5 en Palermo",
-        date = "Vie 25 Oct",
-        time = "21:00",
-        location = "Palermo, CABA",
-        players = "8/10 jugadores",
-        level = "Intermedio",
-        status = "ABIERTO",
-        almostFull = false,
-        imageRes = R.drawable.cancha,
-        tags = listOf("Césped Natural", "Fútbol 5"),
-        distance = "3.5 km"
-    ),
-    MockMatch(
-        id = "2",
-        title = "Fútbol 7 Mix",
-        date = "Sáb 26 Oct",
-        time = "18:30",
-        location = "Caballito",
-        players = "12/14 jugadores",
-        level = "Avanzado",
-        status = "CASI LLENO",
-        almostFull = true,
-        imageRes = R.drawable.cancha,
-        tags = listOf("Sintético"),
-        distance = "0.5 km"
-    )
-)
 
 @Composable
 fun HomeScreen(
@@ -124,7 +101,8 @@ fun HomeScreen(
     onCreateMatchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onRequestsClick: () -> Unit,
-    onMatchesClick: () -> Unit
+    onMatchesClick: () -> Unit,
+    viewModel: PartidoViewModel = viewModel() // <- 1. INYECTAMOS EL VIEWMODEL AQUÍ
 ) {
     var searchText by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Todos") }
@@ -133,7 +111,37 @@ fun HomeScreen(
 
     val colors = homeColors(isDarkMode)
 
-    val filteredMatches = mockMatches.filter { match ->
+    // --- FIREBASE INTEGRACIÓN ---
+    // 2. Escuchamos los partidos que vienen de la base de datos
+    val partidosFirebase by viewModel.partidos.collectAsState()
+
+    // 3. Forzamos la carga de partidos al entrar a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.loadPartidos()
+    }
+
+    // 4. Transformamos el modelo 'Partido' de Firebase al modelo 'MockMatch' que necesita tu diseño
+    val realMatches = partidosFirebase.map { partido ->
+        MockMatch(
+            id = partido.id,
+            title = partido.titulo,
+            date = partido.fecha,
+            time = partido.hora,
+            location = partido.lugar,
+            players = "${partido.jugadoresConfirmados.size}/${partido.maxJugadores} jugadores",
+            level = partido.nivel, // <- Ahora usa el nivel de Firebase
+            status = if (partido.jugadoresConfirmados.size >= partido.maxJugadores) "LLENO" else "ABIERTO",
+            almostFull = (partido.maxJugadores - partido.jugadoresConfirmados.size) in 1..2,
+            imageRes = R.drawable.cancha,
+            tags = listOf(partido.superficie), // <- Ahora usa la superficie de Firebase
+            price = partido.precio,            // <- Nuevo
+            surface = partido.superficie,      // <- Nuevo
+            description = partido.descripcion  // <- Nuevo
+        )
+    }
+
+    // 5. Aplicamos los filtros y la búsqueda sobre los partidos reales (realMatches) en vez de los falsos
+    val filteredMatches = realMatches.filter { match ->
         val matchesSearch =
             searchText.isBlank() ||
                     match.title.contains(searchText, ignoreCase = true) ||
@@ -219,7 +227,7 @@ fun HomeScreen(
                 if (filteredMatches.isEmpty()) {
                     item {
                         Text(
-                            text = "No se encontraron partidos con esa búsqueda.",
+                            text = "No se encontraron partidos con esa búsqueda o todavía no hay partidos creados.",
                             fontSize = 14.sp,
                             color = colors.textSecondary,
                             modifier = Modifier.padding(top = 12.dp)

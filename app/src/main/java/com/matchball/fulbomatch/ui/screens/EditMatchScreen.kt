@@ -1,5 +1,9 @@
 package com.matchball.fulbomatch.ui.screens
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import com.matchball.fulbomatch.ui.screens.PartidoViewModel
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,6 +31,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -39,6 +44,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -142,24 +148,45 @@ fun EditMatchScreen(
     onProfileClick: () -> Unit,
     onNotificationsClick: () -> Unit = {},
     isDarkMode: Boolean = false,
-    onToggleDarkMode: () -> Unit = {}
+    onToggleDarkMode: () -> Unit = {},
+    viewModel: PartidoViewModel = viewModel() // <- 1. Inyectamos ViewModel
 ) {
-    val initialTitle = when (matchId) {
-        "2" -> "Fútbol 7 Mix"
-        "past_3" -> "Fútbol City"
-        else -> "Fútbol 7 - Los Pibes"
+    // 2. Buscamos el partido actual
+    val partidos by viewModel.partidos.collectAsState()
+    val partidoActual = partidos.find { it.id == matchId }
+    val uiState by viewModel.uiState.collectAsState()
+
+    // 3. Variables de estado (arrancan vacías y se llenan con LaunchedEffect)
+    var title by remember { mutableStateOf("") }
+    var date by remember { mutableStateOf("") }
+    var time by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("1500") }
+    var players by remember { mutableStateOf("") }
+    var level by remember { mutableStateOf("Medio") }
+
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    var surface by remember { mutableStateOf("Sintético") }
+    var description by remember { mutableStateOf("Llegar 15 minutos antes.") }
+
+    // 4. Cargamos los datos reales cuando se encuentra el partido
+    LaunchedEffect(partidoActual) {
+        partidoActual?.let {
+            title = it.titulo
+            date = it.fecha
+            time = it.hora
+            location = it.lugar
+            players = it.maxJugadores.toString()
+        }
     }
 
-    var title by remember { mutableStateOf(initialTitle) }
-    var date by remember { mutableStateOf("15/11/2023") }
-    var time by remember { mutableStateOf("20:00") }
-    var location by remember { mutableStateOf("Canchas \"El Templo\", Av. Libertador 1200") }
-    var price by remember { mutableStateOf("1500") }
-    var players by remember { mutableStateOf("10") }
-    var level by remember { mutableStateOf("Medio") }
-    var surface by remember { mutableStateOf("Sintético") }
-    var description by remember {
-        mutableStateOf("Llegar 15 minutos antes. Se suspende por lluvia fuerte. Traer camiseta blanca o negra.")
+    // 5. Escuchamos si se guardó o borró con éxito para navegar
+    LaunchedEffect(uiState) {
+        if (uiState is com.matchball.fulbomatch.ui.screens.PartidoUiState.Success) {
+            viewModel.resetState()
+            onSaveClick() // Esto te devuelve a la lista de partidos
+        }
     }
 
     val colors = editMatchColors(isDarkMode)
@@ -467,7 +494,22 @@ fun EditMatchScreen(
             Spacer(modifier = Modifier.height(22.dp))
 
             Button(
-                onClick = onSaveClick,
+                onClick = {
+                    partidoActual?.let { p ->
+                        val actualizado = p.copy(
+                            titulo = title,
+                            fecha = date,
+                            hora = time,
+                            lugar = location,
+                            maxJugadores = players.toIntOrNull() ?: p.maxJugadores,
+                            precio = price,
+                            nivel = level,
+                            superficie = surface,
+                            descripcion = description
+                        )
+                        viewModel.actualizarPartido(actualizado)
+                    }
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(54.dp),
@@ -490,7 +532,10 @@ fun EditMatchScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             OutlinedButton(
-                onClick = onCancelMatchClick,
+                onClick = {
+                    // En vez de borrar directamente, mostramos el popup
+                    showDeleteConfirmation = true
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -510,7 +555,47 @@ fun EditMatchScreen(
             Spacer(modifier = Modifier.height(36.dp))
         }
     }
+    // Diálogo de confirmación
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            containerColor = colors.background,
+            title = {
+                Text(
+                    text = "Cancelar partido",
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary,
+                    fontSize = 20.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Estás seguro de que querés cancelar este partido? Esta acción no se puede deshacer y se liberarán los cupos de todos los jugadores confirmados.",
+                    color = colors.textSecondary,
+                    fontSize = 15.sp
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        viewModel.borrarPartido(matchId) // Recién acá borramos en Firebase
+                    }
+                ) {
+                    Text("Sí, cancelar", color = colors.danger, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteConfirmation = false }
+                ) {
+                    Text("Volver", color = colors.textPrimary, fontWeight = FontWeight.SemiBold)
+                }
+            }
+        )
+    }
 }
+
 
 @Composable
 private fun EditMockLocationButton(

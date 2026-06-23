@@ -1,5 +1,8 @@
 package com.matchball.fulbomatch.ui.screens
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import com.matchball.fulbomatch.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -43,6 +46,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -134,16 +138,43 @@ fun MatchDetailScreen(
     onEditMatchClick: (String) -> Unit = {},
     onStatisticsClick: (String) -> Unit = {},
     onNotificationsClick: () -> Unit = {},
-    isUserJoined: Boolean = false,
-    isOrganizer: Boolean = false,
-    isFinished: Boolean = false,
-    isDarkMode: Boolean = false,
-    onToggleDarkMode: () -> Unit = {}
-) {
-    val match = mockMatches.find { it.id == matchId }
-    val finishedMatch = getFinishedMatchDetail(matchId)
-    val colors = matchDetailColors(isDarkMode)
 
+    isDarkMode: Boolean = false,
+    onToggleDarkMode: () -> Unit = {},
+    viewModel: PartidoViewModel = viewModel()
+) {
+    // 1. Buscamos el partido real en el estado del ViewModel
+    val partidos by viewModel.partidos.collectAsState()
+    val partidoFirebase = partidos.find { it.id == matchId }
+    val currentUserId = viewModel.currentUserId
+
+    // 2. Calculamos dinámicamente los roles
+    val isOrganizer = partidoFirebase?.creadorId == currentUserId
+    val isUserJoined = partidoFirebase?.jugadoresConfirmados?.contains(currentUserId) == true
+    val isFinished = false // En esta fase asumimos que no están finalizados
+
+    // 3. Mapeamos a MockMatch para que el diseño siga funcionando
+    val match = partidoFirebase?.let { p ->
+        MockMatch(
+            id = p.id,
+            title = p.titulo,
+            date = p.fecha,
+            time = p.hora,
+            location = p.lugar,
+            players = "${p.jugadoresConfirmados.size}/${p.maxJugadores}",
+            level = p.nivel,                // <- Usa el de Firebase
+            status = if (p.jugadoresConfirmados.size >= p.maxJugadores) "LLENO" else "ABIERTO",
+            almostFull = (p.maxJugadores - p.jugadoresConfirmados.size) in 1..2,
+            imageRes = R.drawable.cancha,
+            tags = listOf(p.superficie),    // <- Usa el de Firebase
+            distance = null,
+            price = p.precio,               // <- Usa el de Firebase
+            surface = p.superficie,         // <- Usa el de Firebase
+            description = p.descripcion     // <- Usa el de Firebase
+        )
+    }
+
+    val colors = matchDetailColors(isDarkMode)
     Scaffold(
         topBar = {
             TopAppBar(
@@ -190,8 +221,14 @@ fun MatchDetailScreen(
                     isUserJoined = isUserJoined,
                     isOrganizer = isOrganizer,
                     colors = colors,
-                    onJoinClick = onJoinClick,
-                    onLeaveClick = onLeaveClick,
+                    onJoinClick = {
+                        viewModel.sumarseAPartido(matchId) // Llama a Firebase
+                        onJoinClick() // Ejecuta la navegación
+                    },
+                    onLeaveClick = {
+                        viewModel.bajarseDePartido(matchId) // Llama a Firebase
+                        onLeaveClick() // Ejecuta la navegación
+                    },
                     onEditClick = {
                         onEditMatchClick(matchId)
                     }
@@ -201,23 +238,6 @@ fun MatchDetailScreen(
         containerColor = colors.background
     ) { padding ->
         when {
-            isFinished -> {
-                if (finishedMatch == null) {
-                    EmptyDetailMessage(
-                        text = "Partido finalizado no encontrado",
-                        colors = colors,
-                        modifier = Modifier.padding(padding)
-                    )
-                } else {
-                    FinishedMatchContent(
-                        match = finishedMatch,
-                        colors = colors,
-                        modifier = Modifier.padding(padding),
-                        onStatisticsClick = onStatisticsClick
-                    )
-                }
-            }
-
             match == null -> {
                 EmptyDetailMessage(
                     text = "Partido no encontrado",
@@ -225,7 +245,6 @@ fun MatchDetailScreen(
                     modifier = Modifier.padding(padding)
                 )
             }
-
             else -> {
                 Column(
                     modifier = Modifier
@@ -260,7 +279,7 @@ fun MatchDetailScreen(
                     Spacer(modifier = Modifier.height(20.dp))
 
                     ConfirmedPlayersCard(
-                        match = match,
+                        match = match, // Ahora muestra los cupos reales
                         colors = colors
                     )
 
@@ -361,7 +380,7 @@ private fun MatchHeroCard(
                         contentAlignment = Alignment.CenterEnd
                     ) {
                         Text(
-                            text = "$1500 / jug",
+                            text = "$${match.price} / jug",
                             color = colors.accent,
                             fontSize = 18.sp,
                             fontWeight = FontWeight.SemiBold,

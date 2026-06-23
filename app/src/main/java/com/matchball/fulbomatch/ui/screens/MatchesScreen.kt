@@ -1,5 +1,9 @@
 package com.matchball.fulbomatch.ui.screens
 
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import com.matchball.fulbomatch.ui.screens.PartidoViewModel
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -160,12 +164,47 @@ fun MatchesScreen(
     onCreateMatchClick: () -> Unit,
     onProfileClick: () -> Unit,
     onMatchClick: (String) -> Unit,
-    onRequestsClick: () -> Unit = {}
+    onRequestsClick: () -> Unit = {},
+    viewModel: PartidoViewModel = viewModel() // <- 1. Inyectamos el ViewModel
 ) {
     var selectedTab by remember { mutableStateOf("Próximos") }
     var selectedFilter by remember { mutableStateOf(MatchFilter.TODOS) }
 
     val colors = matchesColors(isDarkMode)
+
+    // --- FIREBASE INTEGRACIÓN ---
+    // 2. Escuchamos los partidos de la base de datos
+    val partidosFirebase by viewModel.partidos.collectAsState()
+    val currentUserId = viewModel.currentUserId
+
+    // 3. Forzamos la recarga al entrar a la pantalla
+    LaunchedEffect(Unit) {
+        viewModel.loadPartidos()
+    }
+
+    // 4. Filtramos SOLO los partidos donde el usuario participa (es creador o está confirmado)
+    val misPartidosFirebase = partidosFirebase.filter { partido ->
+        partido.creadorId == currentUserId || partido.jugadoresConfirmados.contains(currentUserId)
+    }
+
+    // 5. Mapeamos a UserMatch (el formato que usa tu diseño)
+    val realUserMatches = misPartidosFirebase.map { p ->
+        val fechaParts = p.fecha.split("/")
+        val isOrganizer = p.creadorId == currentUserId
+
+        UserMatch(
+            id = p.id,
+            title = p.titulo,
+            location = p.lugar,
+            day = fechaParts.getOrNull(0) ?: "00",
+            month = fechaParts.getOrNull(1) ?: "MES", // Podés armar una funcioncita para pasar el "10" a "OCT"
+            time = "${p.hora} hs",
+            players = "${p.jugadoresConfirmados.size}/${p.maxJugadores} jugadores",
+            status = if (p.jugadoresConfirmados.size >= p.maxJugadores) "CONFIRMADO" else "PENDIENTE",
+            isUserJoined = p.jugadoresConfirmados.contains(currentUserId),
+            isOrganizer = isOrganizer
+        )
+    }
 
     Scaffold(
         bottomBar = {
@@ -222,10 +261,11 @@ fun MatchesScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             if (selectedTab == "Próximos") {
+                // 6. Usamos realUserMatches en vez de la lista falsa
                 val visibleMatches = when (selectedFilter) {
-                    MatchFilter.TODOS -> userMatches
-                    MatchFilter.ME_SUME -> userMatches.filter { it.isUserJoined }
-                    MatchFilter.ORGANIZO -> userMatches.filter { it.isOrganizer }
+                    MatchFilter.TODOS -> realUserMatches
+                    MatchFilter.ME_SUME -> realUserMatches.filter { it.isUserJoined && !it.isOrganizer }
+                    MatchFilter.ORGANIZO -> realUserMatches.filter { it.isOrganizer }
                 }
 
                 if (visibleMatches.isEmpty()) {
@@ -245,6 +285,8 @@ fun MatchesScreen(
                     }
                 }
             } else {
+                // Para los partidos pasados lo dejamos con el mock por ahora
+                // ya que requiere lógica de comparar fechas para saber si ya terminó
                 val visiblePastMatches = when (selectedFilter) {
                     MatchFilter.TODOS -> pastMatches
                     MatchFilter.ME_SUME -> pastMatches.filter { it.isUserJoined }
