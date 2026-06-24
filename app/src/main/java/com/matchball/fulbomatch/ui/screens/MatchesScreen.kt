@@ -1,5 +1,8 @@
 package com.matchball.fulbomatch.ui.screens
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
@@ -9,17 +12,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -31,14 +24,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Place
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -59,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
+import com.matchball.fulbomatch.ui.partido.PartidoUiState
 
 private enum class MatchFilter(val label: String) {
     TODOS("Todos"),
@@ -164,29 +153,27 @@ fun MatchesScreen(
     onProfileClick: () -> Unit,
     onMatchClick: (String) -> Unit,
     onRequestsClick: () -> Unit = {},
-    viewModel: PartidoViewModel = viewModel() // <- 1. Inyectamos el ViewModel
+    viewModel: PartidoViewModel = viewModel()
 ) {
     var selectedTab by remember { mutableStateOf("Próximos") }
     var selectedFilter by remember { mutableStateOf(MatchFilter.TODOS) }
 
+    val context = LocalContext.current
+    val isOnline = isOnline(context)
     val colors = matchesColors(isDarkMode)
 
-    // --- FIREBASE INTEGRACIÓN ---
-    // 2. Escuchamos los partidos de la base de datos
     val partidosFirebase by viewModel.partidos.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     val currentUserId = viewModel.currentUserId
 
-    // 3. Forzamos la recarga al entrar a la pantalla
     LaunchedEffect(Unit) {
         viewModel.loadPartidos()
     }
 
-    // 4. Filtramos SOLO los partidos donde el usuario participa (es creador o está confirmado)
     val misPartidosFirebase = partidosFirebase.filter { partido ->
         partido.creadorId == currentUserId || partido.jugadoresConfirmados.contains(currentUserId)
     }
 
-    // 5. Mapeamos a UserMatch (el formato que usa tu diseño)
     val realUserMatches = misPartidosFirebase.map { p ->
         val fechaParts = p.fecha.split("/")
         val isOrganizer = p.creadorId == currentUserId
@@ -196,7 +183,7 @@ fun MatchesScreen(
             title = p.titulo,
             location = p.lugar,
             day = fechaParts.getOrNull(0) ?: "00",
-            month = fechaParts.getOrNull(1) ?: "MES", // Podés armar una funcioncita para pasar el "10" a "OCT"
+            month = fechaParts.getOrNull(1) ?: "MES",
             time = "${p.hora} hs",
             players = "${p.jugadoresConfirmados.size}/${p.maxJugadores} jugadores",
             status = if (p.jugadoresConfirmados.size >= p.maxJugadores) "CONFIRMADO" else "PENDIENTE",
@@ -225,42 +212,21 @@ fun MatchesScreen(
                 .padding(horizontal = 22.dp, vertical = 12.dp)
                 .semantics { contentDescription = "Pantalla de partidos" }
         ) {
-            MatchesHeader(
-                colors = colors,
-                isDarkMode = isDarkMode,
-                onToggleDarkMode = onToggleDarkMode,
-                onNotificationsClick = onRequestsClick
-            )
-
+            MatchesHeader(colors, isDarkMode, onToggleDarkMode, onRequestsClick)
             Spacer(modifier = Modifier.height(18.dp))
-
-            Text(
-                text = "Partidos",
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                color = colors.textPrimary
-            )
-
+            Text("Partidos", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
             Spacer(modifier = Modifier.height(22.dp))
-
-            MatchesTabs(
-                selectedTab = selectedTab,
-                colors = colors,
-                onTabSelected = { selectedTab = it }
-            )
-
+            MatchesTabs(selectedTab, colors) { selectedTab = it }
             Spacer(modifier = Modifier.height(16.dp))
-
-            MatchesFilterChips(
-                selectedFilter = selectedFilter,
-                colors = colors,
-                onFilterSelected = { selectedFilter = it }
-            )
-
+            MatchesFilterChips(selectedFilter, colors) { selectedFilter = it }
             Spacer(modifier = Modifier.height(20.dp))
 
+            if (!isOnline && realUserMatches.isNotEmpty()) {
+                OfflineWarningBanner()
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
             if (selectedTab == "Próximos") {
-                // 6. Usamos realUserMatches en vez de la lista falsa
                 val visibleMatches = when (selectedFilter) {
                     MatchFilter.TODOS -> realUserMatches
                     MatchFilter.ME_SUME -> realUserMatches.filter { it.isUserJoined && !it.isOrganizer }
@@ -268,49 +234,24 @@ fun MatchesScreen(
                 }
 
                 if (visibleMatches.isEmpty()) {
-                    EmptyFilteredMatches(
-                        selectedFilter = selectedFilter,
-                        colors = colors
-                    )
+                    EmptyFilteredMatches(selectedFilter, colors)
                 } else {
                     visibleMatches.forEach { match ->
-                        UserMatchCard(
-                            match = match,
-                            colors = colors,
-                            onClick = { onMatchClick(match.id) }
-                        )
-
+                        UserMatchCard(match, colors) { onMatchClick(match.id) }
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
             } else {
-                // Para los partidos pasados lo dejamos con el mock por ahora
-                // ya que requiere lógica de comparar fechas para saber si ya terminó
                 val visiblePastMatches = when (selectedFilter) {
                     MatchFilter.TODOS -> pastMatches
                     MatchFilter.ME_SUME -> pastMatches.filter { it.isUserJoined }
                     MatchFilter.ORGANIZO -> pastMatches.filter { it.isOrganizer }
                 }
-
-                if (visiblePastMatches.isEmpty()) {
-                    EmptyFilteredMatches(
-                        selectedFilter = selectedFilter,
-                        colors = colors
-                    )
-                } else {
-                    visiblePastMatches.forEach { match ->
-                        PastMatchCard(
-                            match = match,
-                            colors = colors,
-                            onClick = { onMatchClick(match.id) }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
+                visiblePastMatches.forEach { match ->
+                    PastMatchCard(match, colors) { onMatchClick(match.id) }
+                    Spacer(modifier = Modifier.height(12.dp))
                 }
             }
-
-            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
@@ -984,6 +925,43 @@ private fun UnselectedBottomItem(
             fontSize = 12.sp,
             fontWeight = FontWeight.Medium
         )
+    }
+}
+
+@Composable
+fun OfflineWarningBanner() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFFFFF3E0))
+            .padding(vertical = 8.dp, horizontal = 16.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            imageVector = Icons.Default.CloudOff,
+            contentDescription = "Sin conexión",
+            tint = Color(0xFFEF6C00),
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "Modo sin conexión. Mostrando datos locales.",
+            fontSize = 13.sp,
+            color = Color(0xFFEF6C00),
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+fun isOnline(context: Context): Boolean {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val network = connectivityManager.activeNetwork ?: return false
+    val activeNetwork = connectivityManager.getNetworkCapabilities(network) ?: return false
+    return when {
+        activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> true
+        activeNetwork.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> true
+        else -> false
     }
 }
 
