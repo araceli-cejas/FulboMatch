@@ -3,6 +3,8 @@ package com.matchball.fulbomatch.ui.partido
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
 import com.matchball.fulbomatch.data.model.Partido
 import com.matchball.fulbomatch.data.model.UserProfile
 import com.matchball.fulbomatch.data.repository.AuthRepository
@@ -23,7 +25,6 @@ sealed class PartidoUiState {
 
 class PartidoViewModel(application: Application) : AndroidViewModel(application) {
 
-    // Pasamos 'application' para que el repositorio inicialice Room sin problemas
     private val partidoRepository = PartidoRepository(application)
     private val authRepository = AuthRepository()
     private val userRepository = UserRepository()
@@ -40,19 +41,14 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
     val currentUserId: String? get() = authRepository.currentUser?.uid
 
     init {
-        // --- CONEXIÓN ROOM OBLIGATORIA ---
-        // Nos quedamos escuchando la base de datos local de forma permanente.
-        // Si Room cambia (porque agregamos, editamos o sincronizamos), la UI se entera sola.
         viewModelScope.launch {
             partidoRepository.partidosLocalFlow.collect { listaPartidos ->
                 _partidos.value = listaPartidos
             }
         }
-        // Hacemos una carga inicial automática al abrir la app
         loadPartidos()
     }
 
-    // Cambiamos la lógica: Ahora carga significa "sincronizar Firebase con Room"
     fun loadPartidos() {
         viewModelScope.launch {
             _uiState.value = PartidoUiState.Loading
@@ -79,7 +75,6 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
                 return@launch
             }
 
-            // Generamos un ID único con UUID para evitar que Room pise partidos vacíos
             val idUnico = UUID.randomUUID().toString()
 
             val nuevoPartido = Partido(
@@ -133,6 +128,24 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
             currentUserId?.let { uid ->
                 val result = partidoRepository.joinPartido(partidoId, uid)
                 if (result.isSuccess) {
+                    // --- INICIO LÓGICA DE NOTIFICACIONES ---
+                    // 1. Buscamos el partido actual en nuestra lista cargada
+                    val partido = _partidos.value.find { it.id == partidoId }
+
+                    // 2. Buscamos el nombre de este usuario en la base de datos
+                    val userResult = userRepository.getUsersProfiles(listOf(uid))
+                    val playerName = userResult.getOrNull()?.firstOrNull()?.nombre ?: "Alguien"
+
+                    // 3. Validamos que el partido exista y que el creador NO sea el mismo que se anota
+                    if (partido != null && partido.creadorId != uid) {
+                        sendJoinNotification(
+                            organizerId = partido.creadorId,
+                            matchTitle = partido.titulo,
+                            playerName = playerName
+                        )
+                    }
+                    // --- FIN LÓGICA DE NOTIFICACIONES ---
+
                     _uiState.value = PartidoUiState.Success
                 } else {
                     _uiState.value = PartidoUiState.Error("Error al sumarse al partido")
@@ -167,5 +180,21 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
                 _jugadoresConfirmados.value = result.getOrDefault(emptyList())
             }
         }
+    }
+
+    // --- FUNCIÓN DE FIREBASE NOTIFICATIONS ---
+    private fun sendJoinNotification(organizerId: String, matchTitle: String, playerName: String) {
+        val db = FirebaseFirestore.getInstance()
+
+        val notificationData = hashMapOf(
+            "userId" to organizerId,
+            "title" to "Nuevo jugador anotado",
+            "message" to "$playerName se sumó a tu partido: $matchTitle.",
+            "type" to "new_player",
+            "isRead" to false,
+            "timestamp" to Timestamp.now()
+        )
+
+        db.collection("notifications").add(notificationData)
     }
 }
