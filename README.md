@@ -1,77 +1,58 @@
 # FulboMatch
 
-Aplicación móvil para conectar jugadores y organizadores de fútbol amateur.
+Aplicación móvil para conectar jugadores y organizadores de fútbol amateur, diseñada para optimizar la organización de partidos y la gestión de comunidades deportivas.
 
-FulboMatch busca centralizar la organización de partidos que normalmente se coordinan por WhatsApp o redes sociales, facilitando la creación de partidos, la búsqueda de encuentros disponibles y la participación de jugadores según ubicación, nivel y disponibilidad.
+## Descripción del Proyecto
+FulboMatch centraliza la organización de partidos, eliminando la fricción de los grupos de WhatsApp y redes sociales. La plataforma facilita la creación de encuentros, la búsqueda según disponibilidad, ubicación y nivel, y gestiona la participación de jugadores mediante un sistema reactivo en tiempo real.
 
-## Entrega H1 - Pantallas mockeadas
+## Características Técnicas Destacadas
 
-Esta versión corresponde a la primera entrega obligatoria del Trabajo Práctico Integrador de Desarrollo de Aplicaciones I.
+* **Arquitectura:** Implementación de **MVVM (Model-View-ViewModel)** con patrón **Repository** para una clara separación de responsabilidades.
+* **Persistencia Híbrida:** Estrategia **Offline-First** utilizando **Room Database** (local) y **Firebase Firestore** (remota) para garantizar disponibilidad constante.
+* **Tiempo Real:** Notificaciones automáticas ante inscripciones o bajas mediante listeners de Firestore.
+* **UI/UX:** Interfaz moderna desarrollada con **Jetpack Compose** y **Material Design 3**, con soporte completo para modo claro/oscuro.
+* **Calidad:** Suite de pruebas automatizadas (**UI Tests**) con `Compose Test Rule` para validar los casos de uso críticos.
 
-La aplicación presenta una demo mockeada de los principales flujos de navegación, sin integración real con backend. La integración con Firebase, persistencia local y lógica real queda prevista para la entrega H2.
+## Funcionalidades Implementadas
 
-## Funcionalidades implementadas
+* **Autenticación:** Sistema de Login/Registro seguro vía Firebase Auth.
+* **Gestión de Partidos:** Creación, edición, cancelación y visualización de partidos próximos/finalizados.
+* **Reactividad:** Sistema de notificaciones en tiempo real para organizadores.
+* **Sincronización:** Soporte offline con visualización de estado de conexión.
+* **Perfil:** Gestión de datos personales y estadísticas de juego.
 
-* Onboarding inicial.
-* Login, registro y recuperación de contraseña.
-* Home con buscador y filtros.
-* Listado de partidos próximos y finalizados.
-* Detalle de partido.
-* Sumarse automáticamente a un partido con cupo disponible.
-* Bajarse de un partido y liberar el cupo.
-* Crear partido.
-* Editar o cancelar partido propio.
-* Perfil de usuario.
-* Editar perfil.
-* Panel de notificaciones.
-* Detalle de partidos finalizados.
-* Estadísticas de partidos finalizados.
-* Modo claro y modo oscuro en las pantallas principales.
+## Tecnologías y Herramientas
 
-## Flujos principales
+* **Lenguaje:** Kotlin
+* **UI Framework:** Jetpack Compose
+* **Arquitectura:** MVVM + Clean Architecture (Repository Pattern)
+* **Persistencia:** Room (Local), Firebase Firestore (Remoto)
+* **Autenticación:** Firebase Authentication
+* **Testing:** JUnit, Espresso / Compose UI Test
+* **Versionado:** Git / GitHub
 
-* Autenticación: onboarding, login, registro y recuperación de contraseña.
-* Explorar partidos: visualización de partidos mediante cards.
-* Sumarse a partido: inscripción automática si hay cupo disponible.
-* Bajarse de partido: el usuario puede abandonar un partido en el que está anotado.
-* Crear partido: formulario para cargar título, fecha, hora, ubicación, precio, cupo, nivel y descripción.
-* Editar o cancelar partido: disponible para el usuario creador del partido.
-* Perfil: visualización y edición de datos del usuario.
-* Partidos pasados: consulta de resultados y estadísticas.
-* Notificaciones: avisos por cambios, altas, bajas y cancelaciones.
+## Estructura del Repositorio
 
-## Tecnologías utilizadas
+* `/ui`: Capa de presentación (Screens, ViewModels, Components).
+* `/data`: Repositorios y Modelos.
+* `/data/local`: Entidades y DAOs de Room.
+* `/androidTest`: Pruebas de integración y UI.
 
-* Kotlin
-* Jetpack Compose
-* Material Design 3
-* Navigation Compose
-* Git / GitHub
+## Cómo ejecutar el proyecto
 
-## Arquitectura propuesta
+1. Clonar el repositorio: `git clone [URL_DEL_REPO]`
+2. Abrir en Android Studio (versión estable recomendada).
+3. Configurar el archivo `google-services.json` de Firebase en el módulo `:app`.
+4. Ejecutar tests: Clic derecho en `androidTest` > **Run 'All Tests'**.
+5. Ejecutar aplicación: Seleccionar emulador y presionar **Run**.
 
-El proyecto está orientado a una arquitectura MVVM + Repository.
+## Próximos pasos (Roadmap)
 
-Para H1, los datos se encuentran mockeados para representar los flujos principales de la aplicación. Para H2, se prevé incorporar:
-
-* Firebase Authentication para gestión de usuarios.
-* Firestore como base de datos remota.
-* Firebase Storage para imágenes.
-* Room Database para persistencia local y soporte offline.
-* Repository para decidir entre fuente remota o local.
-
-## Próximos pasos para H2
-
-* Integración con Firebase Auth, Firestore y Storage.
-* Persistencia local con Room.
-* Modo offline y sincronización de datos.
-* Implementación completa de lógica de negocio.
-* Validaciones reales de formularios.
-* Uso de sensores o dispositivo de captura según requisito de la consigna.
-* Pruebas, métricas y documentación final.
+* [ ] Optimización de carga de imágenes en perfil.
+* [ ] Implementación de geolocalización avanzada para búsqueda por radio.
+* [ ] Generación de reportes de estadísticas mediante Firebase Cloud Functions.
 
 ## Recursos
 
-* Tablero de seguimiento: https://trello.com/invite/b/6a10cb1c015e998ce5b5a8a0/ATTI89f853c190eff9925318b204f511508483CC90E0/fulbomatch-tp-aplicaciones-mobile
-* Prototipo: https://www.figma.com/design/jrV89ulsyAm47VuzjaMWJH/DesaApp1?node-id=94-2&t=z933aQEHbXTbKCdd-1
-
+* **Tablero de seguimiento:** [Trello](https://trello.com/invite/b/6a10cb1c015e998ce5b5a8a0/ATTI89f853c190eff9925318b204f511508483CC90E0/fulbomatch-tp-aplicaciones-mobile)
+* **Prototipo:** [Figma](https://www.figma.com/design/jrV89ulsyAm47VuzjaMWJH/DesaApp1?node-id=94-2&t=z933aQEHbXTbKCdd-1)
