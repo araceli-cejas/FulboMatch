@@ -1,3 +1,20 @@
 <resources>
-    <string name="app_name">Fulbomatch</string>
+    <string name="app_name">FulboMatch</string>
+
+    <string name="title_organizar_partido">Organizar Partido</string>
+    <string name="label_titulo_partido">Título (Ej: Fulbo 5 en Avellaneda)</string>
+    <string name="label_fecha">Fecha</string>
+    <string name="label_hora">Hora</string>
+    <string name="label_lugar">Lugar o Cancha</string>
+    <string name="label_max_jugadores">Cantidad de Jugadores (Total)</string>
+    <string name="error_campos_incompletos">Por favor, completá todos los campos</string>
+    <string name="btn_crear_partido">Crear Partido</string>
+    <string name="btn_aceptar">Aceptar</string>
+    <string name="btn_cancelar">Cancelar</string>
+    <string name="cd_volver">Volver</string>
+
+    <string name="nav_inicio">Inicio</string>
+    <string name="nav_partidos">Partidos</string>
+    <string name="nav_crear">Crear</string>
+    <string name="nav_perfil">Perfil</string>
 </resources>

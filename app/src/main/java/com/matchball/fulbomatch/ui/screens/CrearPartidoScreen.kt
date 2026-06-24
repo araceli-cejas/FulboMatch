@@ -1,5 +1,6 @@
 package com.matchball.fulbomatch.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -15,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.partido.PartidoUiState
 import com.matchball.fulbomatch.ui.partido.PartidoViewModel
@@ -22,9 +24,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import com.matchball.fulbomatch.ui.components.MoonIconButton
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,6 +44,8 @@ fun CrearPartidoScreen(
     onMatchesClick: () -> Unit,
     onProfileClick: () -> Unit,
     onPartidoCreado: () -> Unit,
+    onToggleDarkMode: () -> Unit = {},
+    onNotificationsClick: () -> Unit = {},
     viewModel: PartidoViewModel = viewModel(),
     isDarkMode: Boolean
 ) {
@@ -56,29 +65,60 @@ fun CrearPartidoScreen(
 
     val datePickerState = rememberDatePickerState()
     val timePickerState = rememberTimePickerState()
+    val camposIncompletosMsg = stringResource(id = R.string.error_campos_incompletos)
 
-    // Manejo de Estado Reactivo
     LaunchedEffect(uiState) {
         when (uiState) {
             is PartidoUiState.Success -> {
                 viewModel.resetState()
-                onPartidoCreado() // Recién acá navegamos de vuelta
+                onPartidoCreado()
             }
             is PartidoUiState.Error -> {
                 val errorMessage = (uiState as PartidoUiState.Error).message
                 snackbarHostState.showSnackbar(message = errorMessage)
-                viewModel.resetState() // Limpiamos para que no se tranque el error
+                viewModel.resetState()
             }
             else -> {}
         }
     }
 
+    val topBarBg = if (isDarkMode) Color(0xFF111111) else Color.White
+    val topBarContent = if (isDarkMode) Color.White else Color.Black
+    val logoRes = if (isDarkMode) R.drawable.logo_dark else R.drawable.nombre
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Organizar Partido") },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                title = {
+                    // Logo idéntico al de la pantalla de Partidos
+                    Image(
+                        painter = painterResource(id = logoRes),
+                        contentDescription = "Logo FulboMatch",
+                        modifier = Modifier
+                            .width(190.dp)
+                            .height(42.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                },
+                actions = {
+                    MoonIconButton(
+                        isDarkMode = isDarkMode,
+                        iconColor = GreenPrimary,
+                        onClick = onToggleDarkMode
+                    )
+                    IconButton(onClick = onNotificationsClick) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notificaciones",
+                            tint = GreenPrimary
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = topBarBg,
+                    titleContentColor = topBarContent
+                )
             )
         },
         bottomBar = {
@@ -101,10 +141,20 @@ fun CrearPartidoScreen(
                     .padding(20.dp)
                     .verticalScroll(rememberScrollState())
             ) {
+                // Título en el cuerpo de la pantalla
+                Text(
+                    text = stringResource(id = R.string.title_organizar_partido),
+                    fontSize = 26.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = topBarContent
+                )
+
+                Spacer(modifier = Modifier.height(22.dp))
+
                 OutlinedTextField(
                     value = titulo,
                     onValueChange = { titulo = it; errorLocal = null },
-                    label = { Text("Título (Ej: Fulbo 5 en Palermo)") },
+                    label = { Text(stringResource(id = R.string.label_titulo_partido)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -114,7 +164,7 @@ fun CrearPartidoScreen(
                 OutlinedTextField(
                     value = fecha,
                     onValueChange = { },
-                    label = { Text("Fecha") },
+                    label = { Text(stringResource(id = R.string.label_fecha)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showDatePicker = true },
@@ -131,7 +181,7 @@ fun CrearPartidoScreen(
                 OutlinedTextField(
                     value = hora,
                     onValueChange = { },
-                    label = { Text("Hora") },
+                    label = { Text(stringResource(id = R.string.label_hora)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { showTimePicker = true },
@@ -148,7 +198,7 @@ fun CrearPartidoScreen(
                 OutlinedTextField(
                     value = lugar,
                     onValueChange = { lugar = it; errorLocal = null },
-                    label = { Text("Lugar o Cancha") },
+                    label = { Text(stringResource(id = R.string.label_lugar)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -158,7 +208,7 @@ fun CrearPartidoScreen(
                 OutlinedTextField(
                     value = maxJugadores,
                     onValueChange = { maxJugadores = it; errorLocal = null },
-                    label = { Text("Cantidad de Jugadores (Total)") },
+                    label = { Text(stringResource(id = R.string.label_max_jugadores)) },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true
@@ -174,7 +224,7 @@ fun CrearPartidoScreen(
                 Button(
                     onClick = {
                         if (titulo.isBlank() || fecha.isBlank() || hora.isBlank() || lugar.isBlank() || maxJugadores.isBlank()) {
-                            errorLocal = "Por favor, completá todos los campos"
+                            errorLocal = camposIncompletosMsg
                         } else {
                             viewModel.crearPartido(
                                 titulo = titulo,
@@ -190,17 +240,16 @@ fun CrearPartidoScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary),
                     shape = RoundedCornerShape(26.dp)
                 ) {
-                    Text("Crear Partido", fontSize = 16.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(id = R.string.btn_crear_partido), fontSize = 16.sp, color = Color.White, fontWeight = FontWeight.SemiBold)
                 }
             }
 
-            // Capa de carga que bloquea la UI entera
             if (uiState is PartidoUiState.Loading) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Black.copy(alpha = 0.3f))
-                        .clickable(enabled = false) {}, // Evita clics en los elementos de atrás
+                        .clickable(enabled = false) {},
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
@@ -212,7 +261,6 @@ fun CrearPartidoScreen(
         }
     }
 
-    // Diálogos (DatePicker y TimePicker se mantienen igual)
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -224,10 +272,10 @@ fun CrearPartidoScreen(
                     }
                     showDatePicker = false
                     errorLocal = null
-                }) { Text("Aceptar") }
+                }) { Text(stringResource(id = R.string.btn_aceptar)) }
             },
             dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") }
+                TextButton(onClick = { showDatePicker = false }) { Text(stringResource(id = R.string.btn_cancelar)) }
             }
         ) { DatePicker(state = datePickerState) }
     }
@@ -242,10 +290,10 @@ fun CrearPartidoScreen(
                     hora = "$h:$m"
                     showTimePicker = false
                     errorLocal = null
-                }) { Text("Aceptar") }
+                }) { Text(stringResource(id = R.string.btn_aceptar)) }
             },
             dismissButton = {
-                TextButton(onClick = { showTimePicker = false }) { Text("Cancelar") }
+                TextButton(onClick = { showTimePicker = false }) { Text(stringResource(id = R.string.btn_cancelar)) }
             },
             text = { TimePicker(state = timePickerState) }
         )
@@ -276,26 +324,26 @@ private fun CrearPartidoBottomBar(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.width(64.dp).height(64.dp).clickable { onHomeClick() }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Icon(Icons.Default.Home, contentDescription = "Inicio", tint = iconColor, modifier = Modifier.size(26.dp))
+                Icon(Icons.Default.Home, contentDescription = stringResource(id = R.string.nav_inicio), tint = iconColor, modifier = Modifier.size(26.dp))
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Inicio", color = iconColor, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(id = R.string.nav_inicio), color = iconColor, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             }
             Column(modifier = Modifier.width(64.dp).height(64.dp).clickable { onMatchesClick() }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 Text("⚽", fontSize = 24.sp)
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Partidos", color = iconColor, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(id = R.string.nav_partidos), color = iconColor, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             }
             Box(modifier = Modifier.width(76.dp).height(66.dp).clip(RoundedCornerShape(22.dp)).background(selectedBg), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Default.Add, contentDescription = "Crear", tint = selectedIcon, modifier = Modifier.size(26.dp))
+                    Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.nav_crear), tint = selectedIcon, modifier = Modifier.size(26.dp))
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text("Crear", color = selectedIcon, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                    Text(stringResource(id = R.string.nav_crear), color = selectedIcon, fontSize = 13.sp, fontWeight = FontWeight.Medium)
                 }
             }
             Column(modifier = Modifier.width(64.dp).height(64.dp).clickable { onProfileClick() }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Icon(Icons.Default.Person, contentDescription = "Perfil", tint = iconColor, modifier = Modifier.size(26.dp))
+                Icon(Icons.Default.Person, contentDescription = stringResource(id = R.string.nav_perfil), tint = iconColor, modifier = Modifier.size(26.dp))
                 Spacer(modifier = Modifier.height(4.dp))
-                Text("Perfil", color = iconColor, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Text(stringResource(id = R.string.nav_perfil), color = iconColor, fontSize = 13.sp, fontWeight = FontWeight.Medium)
             }
         }
     }
