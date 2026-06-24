@@ -1,5 +1,6 @@
 package com.matchball.fulbomatch.ui.profile
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.matchball.fulbomatch.data.model.UserProfile
@@ -7,6 +8,7 @@ import com.matchball.fulbomatch.data.repository.AuthRepository
 import com.matchball.fulbomatch.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 sealed class UserUiState {
@@ -25,6 +27,13 @@ class UserViewModel : ViewModel() {
 
     private val _userProfile = MutableStateFlow<UserProfile?>(null)
     val userProfile: StateFlow<UserProfile?> = _userProfile
+
+    private val _userPhotoUri = MutableStateFlow<Uri?>(null)
+    val userPhotoUri = _userPhotoUri.asStateFlow()
+
+    private val _userLocation = MutableStateFlow<String>("Ubicación no disponible")
+    val userLocation = _userLocation.asStateFlow()
+
 
     init {
         loadCurrentUserProfile()
@@ -68,5 +77,13 @@ class UserViewModel : ViewModel() {
 
     fun resetState() {
         _uiState.value = UserUiState.Idle
+    }
+
+    fun updatePhoto(uri: Uri?) {
+        _userPhotoUri.value = uri
+    }
+
+    fun updateLocation(location: String) {
+        _userLocation.value = location
     }
 }

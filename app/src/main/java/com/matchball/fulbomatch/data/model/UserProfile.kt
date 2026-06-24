@@ -9,5 +9,6 @@ data class UserProfile(
     val phone: String = "",
     val age: String = "",
     val zone: String = "",
-    val description: String = ""
+    val description: String = "",
+    val photoBase64: String = ""
 )
