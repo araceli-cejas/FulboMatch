@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 
 // Declaramos la base de datos, sus tablas y la versión
-@Database(entities = [PartidoEntity::class], version = 1, exportSchema = false)
+@Database(entities = [PartidoEntity::class], version = 2, exportSchema = false)
 @TypeConverters(StringListConverter::class)
 abstract class AppDatabase : RoomDatabase() {
 
@@ -24,7 +24,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "fulbomatch_database"
-                ).build()
+                )
+                .fallbackToDestructiveMigration() // Borra y recrea si cambia el esquema
+                .build()
                 INSTANCE = instance
                 instance
             }

@@ -6,6 +6,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.google.firebase.auth.FirebaseAuth
 import com.matchball.fulbomatch.ui.auth.LoginScreen
 import com.matchball.fulbomatch.ui.screens.CrearPartidoScreen
 import com.matchball.fulbomatch.ui.screens.EditMatchScreen
@@ -191,8 +192,10 @@ fun NavGraph(
                         launchSingleTop = true
                     }
                 },
-                onStatisticsClick = { id ->
-                    navController.navigate(Routes.MatchStatistics.createRoute(id))
+                onStatisticsClick = { id -> 
+                    navController.navigate(Routes.MatchStatistics.createRoute(id)) {
+                        launchSingleTop = true
+                    }
                 },
                 onNotificationsClick = {
                     navController.navigate(Routes.Notifications.route) {
@@ -257,9 +260,15 @@ fun NavGraph(
                     }
                 },
                 isDarkMode = isDarkMode,
+                onToggleDarkMode = onToggleDarkMode,
                 onHomeClick = { navController.navigate(Routes.Home.route) },
                 onMatchesClick = { navController.navigate(Routes.Matches.route) },
-                onProfileClick = { navController.navigate(Routes.Profile.route) }
+                onProfileClick = { navController.navigate(Routes.Profile.route) },
+                onNotificationsClick = {
+                    navController.navigate(Routes.Notifications.route) {
+                        launchSingleTop = true
+                    }
+                }
             )
         }
 

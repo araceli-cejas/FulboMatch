@@ -1,62 +1,34 @@
 package com.matchball.fulbomatch.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.util.Base64
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -64,12 +36,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.android.gms.location.LocationServices
 import com.matchball.fulbomatch.R
+import com.matchball.fulbomatch.data.model.UserProfile
 import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
 import com.matchball.fulbomatch.ui.partido.PartidoViewModel
+import java.util.Locale
 
 // Mantenemos la estructura de la tarjeta para la UI
 data class MockMatch(
@@ -103,12 +79,31 @@ fun HomeScreen(
     onProfileClick: () -> Unit,
     onRequestsClick: () -> Unit,
     onMatchesClick: () -> Unit,
-    viewModel: PartidoViewModel = viewModel() // <- 1. INYECTAMOS EL VIEWMODEL AQUÍ
+    viewModel: PartidoViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     var searchText by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("Todos") }
-    var selectedLocation by remember { mutableStateOf("Cerca de Caballito, CABA") }
+    var selectedLocation by remember { mutableStateOf("Toda la ciudad") }
     var showLocationDialog by remember { mutableStateOf(false) }
+
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permiso otorgado, intentamos obtener ubicación
+            try {
+                fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                    loc?.let {
+                        // En un app real usaríamos Geocoder. Aquí simulamos el barrio.
+                        selectedLocation = "Cerca de tu ubicación"
+                    }
+                }
+            } catch (e: SecurityException) {}
+        }
+    }
 
     val colors = homeColors(isDarkMode)
 
@@ -143,6 +138,10 @@ fun HomeScreen(
 
     // 5. Aplicamos los filtros y la búsqueda sobre los partidos reales (realMatches) en vez de los falsos
     val filteredMatches = realMatches.filter { match ->
+        val rawMatch = partidosFirebase.find { it.id == match.id }
+        // Solo mostrar si el estado es PENDIENTE o ABIERTO (o null si es mock)
+        val isVisible = rawMatch == null || (rawMatch.status != "CANCELADO" && rawMatch.status != "FINALIZADO")
+
         val matchesSearch =
             searchText.isBlank() ||
                     match.title.contains(searchText, ignoreCase = true) ||
@@ -151,8 +150,14 @@ fun HomeScreen(
         val matchesFilter =
             selectedFilter == "Todos" ||
                     match.tags.any { it.equals(selectedFilter, ignoreCase = true) }
+        
+        val matchesLocation = 
+            selectedLocation == "Toda la ciudad" || 
+                    selectedLocation == "Cerca de tu ubicación" ||
+                    match.location.contains(selectedLocation, ignoreCase = true) ||
+                    match.location.contains(selectedLocation.substringAfter("Cerca de ").substringBefore(","), ignoreCase = true)
 
-        matchesSearch && matchesFilter
+        isVisible && matchesSearch && matchesFilter && matchesLocation
     }
 
     Scaffold(
@@ -239,6 +244,10 @@ fun HomeScreen(
                         MatchCard(
                             match = match,
                             colors = colors,
+                            confirmedPlayerIds = match.id.let { matchId -> 
+                                partidosFirebase.find { it.id == matchId }?.jugadoresConfirmados ?: emptyList()
+                            },
+                            viewModel = viewModel,
                             onClick = { onMatchClick(match.id) }
                         )
                     }
@@ -256,6 +265,17 @@ fun HomeScreen(
                 },
                 onDismiss = {
                     showLocationDialog = false
+                },
+                onRequestGPS = {
+                    if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                        try {
+                            fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                                loc?.let { selectedLocation = "Cerca de tu ubicación" }
+                            }
+                        } catch (e: SecurityException) {}
+                    } else {
+                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+                    }
                 }
             )
         }
@@ -424,12 +444,15 @@ private fun ChangeLocationDialog(
     colors: HomeColors,
     selectedLocation: String,
     onLocationSelected: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onRequestGPS: () -> Unit
 ) {
     val locations = listOf(
-        "Cerca de Caballito, CABA",
-        "Cerca de Palermo, CABA",
-        "Cerca de Villa Crespo, CABA",
+        "Toda la ciudad",
+        "Palermo, CABA",
+        "Caballito, CABA",
+        "Villa Crespo, CABA",
+        "Belgrano, CABA",
         "Usar ubicación actual"
     )
 
@@ -460,13 +483,12 @@ private fun ChangeLocationDialog(
                         selected = selectedLocation == location,
                         colors = colors,
                         onClick = {
-                            val newLocation = if (location == "Usar ubicación actual") {
-                                "Cerca de Caballito, CABA"
+                            if (location == "Usar ubicación actual") {
+                                onRequestGPS()
+                                onDismiss()
                             } else {
-                                location
+                                onLocationSelected(location)
                             }
-
-                            onLocationSelected(newLocation)
                         }
                     )
                 }
@@ -554,6 +576,8 @@ private fun FilterPill(
 private fun MatchCard(
     match: MockMatch,
     colors: HomeColors,
+    confirmedPlayerIds: List<String>,
+    viewModel: PartidoViewModel,
     onClick: () -> Unit
 ) {
     Card(
@@ -669,7 +693,11 @@ private fun MatchCard(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AvatarStack(colors = colors)
+                    AvatarStack(
+                        confirmedPlayerIds = confirmedPlayerIds,
+                        viewModel = viewModel,
+                        colors = colors
+                    )
 
                     Spacer(modifier = Modifier.width(8.dp))
 
@@ -759,44 +787,77 @@ private fun DistanceBadge(
 
 @Composable
 private fun AvatarStack(
+    confirmedPlayerIds: List<String>,
+    viewModel: PartidoViewModel,
     colors: HomeColors
 ) {
-    Row {
-        repeat(3) { index ->
+    var playerProfiles by remember { mutableStateOf<List<UserProfile>>(emptyList()) }
+    
+    LaunchedEffect(confirmedPlayerIds) {
+        if (confirmedPlayerIds.isNotEmpty()) {
+            // Cargar perfiles reales si hay jugadores
+            viewModel.cargarJugadoresConfirmados(confirmedPlayerIds)
+        }
+    }
+    
+    // Escuchamos los perfiles cargados del ViewModel
+    val loadedProfiles by viewModel.jugadoresConfirmados.collectAsState()
+    
+    // Solo tomamos los perfiles que pertenecen a este partido específico
+    val currentMatchPlayers = remember(loadedProfiles, confirmedPlayerIds) {
+        loadedProfiles.filter { confirmedPlayerIds.contains(it.id) }
+    }
+
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        val displayLimit = 3
+        val playersToShow = currentMatchPlayers.take(displayLimit)
+        
+        playersToShow.forEach { player ->
+            val bitmap = remember(player.photoBase64) {
+                if (player.photoBase64.isNotEmpty()) {
+                    try {
+                        val imageBytes = Base64.decode(player.photoBase64, Base64.DEFAULT)
+                        BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                    } catch (e: Exception) { null }
+                } else null
+            }
+
             Box(
                 modifier = Modifier
-                    .size(22.dp)
+                    .size(24.dp)
                     .clip(CircleShape)
-                    .background(
-                        when (index) {
-                            0 -> Color(0xFF005C1F)
-                            1 -> Color(0xFF007A3D)
-                            else -> Color(0xFF4AAE73)
-                        }
-                    ),
+                    .background(colors.levelBackground),
+                contentAlignment = Alignment.Center
+            ) {
+                if (bitmap != null) {
+                    Image(
+                        bitmap = bitmap.asImageBitmap(),
+                        contentDescription = player.nombre,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(text = "👤", fontSize = 12.sp)
+                }
+            }
+            Spacer(modifier = Modifier.width((-4).dp)) // Superponer un poco
+        }
+
+        if (confirmedPlayerIds.size > displayLimit) {
+            Box(
+                modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(colors.levelBackground),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "👤",
-                    fontSize = 10.sp
+                    text = "+${confirmedPlayerIds.size - displayLimit}",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary
                 )
             }
-
-            Spacer(modifier = Modifier.width(2.dp))
-        }
-
-        Box(
-            modifier = Modifier
-                .size(22.dp)
-                .clip(CircleShape)
-                .background(colors.levelBackground),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = "+10",
-                fontSize = 8.sp,
-                color = colors.textPrimary
-            )
         }
     }
 }

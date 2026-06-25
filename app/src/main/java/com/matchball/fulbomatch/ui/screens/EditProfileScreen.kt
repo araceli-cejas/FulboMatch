@@ -3,6 +3,7 @@ package com.matchball.fulbomatch.ui.screens
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -58,6 +59,7 @@ fun EditProfileScreen(
 ) {
     val userProfile by viewModel.userProfile.collectAsState()
     val context = LocalContext.current
+    val colors = editProfileColors(isDarkMode)
 
     var fullName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -83,28 +85,65 @@ fun EditProfileScreen(
         }
     }
 
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = colors.textPrimary,
+        unfocusedTextColor = colors.textPrimary,
+        focusedContainerColor = colors.inputBackground,
+        unfocusedContainerColor = colors.inputBackground,
+        focusedBorderColor = GreenPrimary,
+        unfocusedBorderColor = colors.border,
+        focusedLabelColor = GreenPrimary,
+        unfocusedLabelColor = colors.textSecondary,
+        disabledBorderColor = colors.border,
+        disabledTextColor = colors.textSecondary,
+        disabledLabelColor = colors.textSecondary,
+        disabledContainerColor = colors.inputBackground
+    )
+
     LaunchedEffect(userProfile) {
         userProfile?.let {
             fullName = it.nombre; email = it.email; phone = it.phone
             age = it.age; zone = it.zone; description = it.description
+            
+            if (it.photoBase64.isNotEmpty() && profileBitmap == null) {
+                try {
+                    val imageBytes = Base64.decode(it.photoBase64, Base64.DEFAULT)
+                    profileBitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                } catch (e: Exception) {
+                    // Si falla, se queda nulo
+                }
+            }
         }
     }
 
-    Scaffold(containerColor = Color(0xFFF6F8FA)) { padding ->
+    Scaffold(containerColor = colors.background) { padding ->
         Column(
             modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onBackClick) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") }
-                Text("Editar perfil", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                IconButton(onClick = onBackClick) { 
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack, 
+                        "Volver", 
+                        tint = colors.headerIcon
+                    ) 
+                }
+                Text(
+                    "Editar perfil", 
+                    fontSize = 20.sp, 
+                    fontWeight = FontWeight.Bold,
+                    color = colors.textPrimary
+                )
             }
 
             Box(modifier = Modifier.align(Alignment.CenterHorizontally).size(112.dp), contentAlignment = Alignment.BottomEnd) {
                 if (profileBitmap != null) {
                     Image(bitmap = profileBitmap!!.asImageBitmap(), "Foto", modifier = Modifier.size(112.dp).clip(CircleShape), contentScale = ContentScale.Crop)
                 } else {
-                    Image(painterResource(R.drawable.hombre), "Foto", modifier = Modifier.size(112.dp).clip(CircleShape), contentScale = ContentScale.Crop)
+                    Box(modifier = Modifier.size(112.dp).clip(CircleShape).background(colors.avatarPlaceholder), contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Person, "Sin foto", tint = colors.textSecondary, modifier = Modifier.size(56.dp))
+                    }
                 }
                 Box(modifier = Modifier.size(34.dp).clip(CircleShape).background(GreenPrimary).clickable {
                     cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
@@ -113,18 +152,19 @@ fun EditProfileScreen(
                 }
             }
 
-            OutlinedTextField(value = fullName, onValueChange = { fullName = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Teléfono") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = age, onValueChange = { age = it }, label = { Text("Edad") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            OutlinedTextField(value = zone, onValueChange = { zone = it }, label = { Text("Zona") }, modifier = Modifier.fillMaxWidth())
+            OutlinedTextField(value = fullName, onValueChange = { fullName = it }, label = { Text("Nombre") }, modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
+            OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email") }, modifier = Modifier.fillMaxWidth(), enabled = false, colors = textFieldColors) 
+            OutlinedTextField(value = phone, onValueChange = { if (it.all { char -> char.isDigit() }) phone = it }, label = { Text("Teléfono (Solo números)") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), colors = textFieldColors)
+            OutlinedTextField(value = age, onValueChange = { if (it.all { char -> char.isDigit() }) age = it }, label = { Text("Edad") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), colors = textFieldColors)
+            OutlinedTextField(value = zone, onValueChange = { zone = it }, label = { Text("Zona") }, modifier = Modifier.fillMaxWidth(), colors = textFieldColors)
 
             TextButton(onClick = { locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION) }) {
-                Icon(Icons.Default.Place, null)
-                Text("Usar mi ubicación actual")
+                Icon(Icons.Default.Place, null, tint = colors.accent)
+                Spacer(Modifier.width(8.dp))
+                Text("Usar mi ubicación actual", color = colors.accent)
             }
 
-            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth().height(100.dp))
+            OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descripción") }, modifier = Modifier.fillMaxWidth().height(100.dp), colors = textFieldColors)
 
             Button(
                 onClick = {
@@ -134,7 +174,7 @@ fun EditProfileScreen(
                             val outputStream = ByteArrayOutputStream()
                             bitmap.compress(Bitmap.CompressFormat.JPEG, 70, outputStream)
                             Base64.encodeToString(outputStream.toByteArray(), Base64.DEFAULT)
-                        } ?: ""
+                        } ?: userProfile?.photoBase64 ?: ""
 
                         viewModel.updateProfile(
                             UserProfile(
@@ -144,7 +184,7 @@ fun EditProfileScreen(
                                 phone = phone,
                                 age = age,
                                 zone = zone,
-                                posicion = "Completar",
+                                posicion = userProfile?.posicion ?: "",
                                 description = description,
                                 photoBase64 = base64Image
                             )
@@ -152,10 +192,48 @@ fun EditProfileScreen(
                         onSaveClick()
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(54.dp)
+                modifier = Modifier.fillMaxWidth().height(54.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
             ) {
-                Text("Guardar Cambios")
+                Text("Guardar Cambios", color = White)
             }
         }
+    }
+}
+
+private data class EditProfileColors(
+    val background: Color,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val border: Color,
+    val inputBackground: Color,
+    val headerIcon: Color,
+    val avatarPlaceholder: Color,
+    val accent: Color
+)
+
+private fun editProfileColors(isDarkMode: Boolean): EditProfileColors {
+    return if (isDarkMode) {
+        EditProfileColors(
+            background = Color(0xFF111111),
+            textPrimary = Color(0xFFEDEDED),
+            textSecondary = Color(0xFFBDBDBD),
+            border = Color(0xFF3E463E),
+            inputBackground = Color(0xFF1A1A1A),
+            headerIcon = Color(0xFFC9D1C9),
+            avatarPlaceholder = Color(0xFF2A2A2A),
+            accent = Color(0xFF9EF49B)
+        )
+    } else {
+        EditProfileColors(
+            background = Color(0xFFF6F8FA),
+            textPrimary = Color(0xFF202020),
+            textSecondary = Color(0xFF555555),
+            border = Color(0xFFD0D0D0),
+            inputBackground = Color.White,
+            headerIcon = GreenPrimary,
+            avatarPlaceholder = Color(0xFFE0E0E0),
+            accent = GreenPrimary
+        )
     }
 }

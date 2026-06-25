@@ -33,7 +33,9 @@ class NotificationCardTest {
         composeTestRule.setContent {
             NotificationCard(
                 notification = mockNotification,
-                onClick = {}
+                onClick = {},
+                colors = TODO(),
+                isDarkMode = TODO()
             )
         }
 
@@ -51,7 +53,9 @@ class NotificationCardTest {
         composeTestRule.setContent {
             NotificationCard(
                 notification = mockNotification,
-                onClick = { clickRegistrado = true }
+                onClick = { clickRegistrado = true },
+                colors = TODO(),
+                isDarkMode = TODO()
             )
         }
 

@@ -47,7 +47,6 @@ import androidx.compose.ui.unit.sp
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
-import com.matchball.fulbomatch.ui.partido.PartidoUiState
 
 private enum class MatchFilter(val label: String) {
     TODOS("Todos"),
@@ -56,92 +55,15 @@ private enum class MatchFilter(val label: String) {
 }
 
 data class UserMatch(
-    val id: String,
-    val title: String,
-    val location: String,
-    val day: String,
-    val month: String,
-    val time: String,
-    val players: String,
-    val status: String,
-    val isUserJoined: Boolean,
-    val isOrganizer: Boolean
+    val id: String, val title: String, val location: String, val day: String,
+    val month: String, val time: String, val players: String, val status: String,
+    val isUserJoined: Boolean, val isOrganizer: Boolean
 )
 
 data class PastMatch(
-    val id: String,
-    val title: String,
-    val location: String,
-    val day: String,
-    val month: String,
-    val time: String,
-    val result: String,
-    val isUserJoined: Boolean,
-    val isOrganizer: Boolean,
-    val status: String = "FINALIZADO"
-)
-
-val userMatches = listOf(
-    UserMatch(
-        id = "1",
-        title = "Fútbol 5 - La Canchita",
-        location = "Palermo, CABA",
-        day = "25",
-        month = "OCT",
-        time = "20:00 hs",
-        players = "10/10 jugadores",
-        status = "CONFIRMADO",
-        isUserJoined = true,
-        isOrganizer = false
-    ),
-    UserMatch(
-        id = "2",
-        title = "Fútbol 7 Mix",
-        location = "Caballito, CABA",
-        day = "26",
-        month = "OCT",
-        time = "18:30 hs",
-        players = "12/14 jugadores",
-        status = "PENDIENTE",
-        isUserJoined = false,
-        isOrganizer = true
-    )
-)
-
-val pastMatches = listOf(
-    PastMatch(
-        id = "past_1",
-        title = "Cancha El Clásico",
-        location = "Palermo, CABA",
-        day = "12",
-        month = "OCT",
-        time = "19:00 hs",
-        result = "5 - 3",
-        isUserJoined = true,
-        isOrganizer = false
-    ),
-    PastMatch(
-        id = "past_2",
-        title = "La Canchita F5",
-        location = "Belgrano, CABA",
-        day = "05",
-        month = "OCT",
-        time = "20:30 hs",
-        result = "2 - 2",
-        isUserJoined = true,
-        isOrganizer = false
-    ),
-    PastMatch(
-        id = "past_3",
-        title = "Fútbol City",
-        location = "Vicente López, GBA",
-        day = "28",
-        month = "SEP",
-        time = "18:00 hs",
-        result = "1 - 4",
-        isUserJoined = false,
-        isOrganizer = true
-    )
+    val id: String, val title: String, val location: String, val day: String,
+    val month: String, val time: String, val result: String,
+    val isUserJoined: Boolean, val isOrganizer: Boolean, val status: String = "FINALIZADO"
 )
 
 @Composable
@@ -165,95 +87,77 @@ fun MatchesScreen(
     val partidosFirebase by viewModel.partidos.collectAsState()
     val currentUserId = viewModel.currentUserId
 
-    LaunchedEffect(Unit) {
-        viewModel.loadPartidos()
-    }
+    LaunchedEffect(Unit) { viewModel.loadPartidos() }
 
-    // FILTRO DINÁMICO: Solo partidos donde el usuario es creador o participante
+    // Filtrar solo partidos del usuario actual
     val misPartidos = partidosFirebase.filter { p ->
         p.creadorId == currentUserId || p.jugadoresConfirmados.contains(currentUserId)
     }
 
-    val realUserMatches = misPartidos.map { p ->
+    // Mapa a Próximos (Solo PENDIENTE o ABIERTO)
+    val realUserMatches = misPartidos.filter { it.status == "PENDIENTE" || it.status == "ABIERTO" }.map { p ->
         val fechaParts = p.fecha.split("/")
         UserMatch(
-            id = p.id,
-            title = p.titulo,
-            location = p.lugar,
-            day = fechaParts.getOrNull(0) ?: "00",
-            month = fechaParts.getOrNull(1) ?: "MES",
-            time = "${p.hora} hs",
-            players = "${p.jugadoresConfirmados.size}/${p.maxJugadores} jugadores",
+            id = p.id, title = p.titulo, location = p.lugar,
+            day = fechaParts.getOrNull(0) ?: "00", month = fechaParts.getOrNull(1) ?: "MES",
+            time = "${p.hora} hs", players = "${p.jugadoresConfirmados.size}/${p.maxJugadores} jugadores",
             status = if (p.jugadoresConfirmados.size >= p.maxJugadores) "CONFIRMADO" else "PENDIENTE",
             isUserJoined = p.jugadoresConfirmados.contains(currentUserId),
             isOrganizer = p.creadorId == currentUserId
         )
     }
 
-    // FILTRO PARA PASADOS: Igual al anterior, aquí deberías filtrar tu lista de pastMatches
-    // o compararlos contra la base de datos real
-    val misPasados = pastMatches.filter { it.isUserJoined || it.isOrganizer }
+    // Mapa a Pasados (FINALIZADO o CANCELADO)
+    val realPastMatches = misPartidos.filter { it.status == "FINALIZADO" || it.status == "CANCELADO" }.map { p ->
+        val fechaParts = p.fecha.split("/")
+        PastMatch(
+            id = p.id, title = p.titulo, location = p.lugar,
+            day = fechaParts.getOrNull(0) ?: "00", month = fechaParts.getOrNull(1) ?: "MES",
+            time = "${p.hora} hs", result = p.status,
+            isUserJoined = p.jugadoresConfirmados.contains(currentUserId),
+            isOrganizer = p.creadorId == currentUserId,
+            status = p.status
+        )
+    }
+
 
     Scaffold(
-        bottomBar = {
-            MatchesBottomBar(colors, onHomeClick, onCreateMatchClick, onProfileClick)
-        },
+        bottomBar = { MatchesBottomBar(colors, onHomeClick, onCreateMatchClick, onProfileClick) },
         containerColor = colors.background
     ) { padding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .background(colors.background)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 22.dp, vertical = 12.dp)
+            modifier = Modifier.fillMaxSize().padding(padding).background(colors.background)
+                .verticalScroll(rememberScrollState()).padding(horizontal = 22.dp, vertical = 12.dp)
         ) {
             MatchesHeader(colors, isDarkMode, onToggleDarkMode, onRequestsClick)
-            Spacer(modifier = Modifier.height(18.dp))
             Text("Partidos", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
-
             MatchesTabs(selectedTab, colors) { selectedTab = it }
             MatchesFilterChips(selectedFilter, colors) { selectedFilter = it }
 
-            if (!isOnline && realUserMatches.isNotEmpty()) {
-                OfflineWarningBanner()
-            }
+            if (!isOnline && misPartidos.isNotEmpty()) OfflineWarningBanner()
 
             if (selectedTab == "Próximos") {
-                val visibleMatches = when (selectedFilter) {
+                val visible = when (selectedFilter) {
                     MatchFilter.TODOS -> realUserMatches
                     MatchFilter.ME_SUME -> realUserMatches.filter { it.isUserJoined && !it.isOrganizer }
                     MatchFilter.ORGANIZO -> realUserMatches.filter { it.isOrganizer }
                 }
-
-                if (visibleMatches.isEmpty()) {
-                    EmptyFilteredMatches(selectedFilter, colors)
-                } else {
-                    visibleMatches.forEach { match ->
-                        UserMatchCard(match, colors) { onMatchClick(match.id) }
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                }
+                if (visible.isEmpty()) EmptyFilteredMatches(selectedFilter, colors)
+                else visible.forEach { UserMatchCard(it, colors) { onMatchClick(it.id) }; Spacer(modifier = Modifier.height(12.dp)) }
             } else {
-                // AQUÍ APLICAMOS EL FILTRO A LOS PASADOS
-                val visiblePastMatches = when (selectedFilter) {
-                    MatchFilter.TODOS -> misPasados
-                    MatchFilter.ME_SUME -> misPasados.filter { it.isUserJoined }
-                    MatchFilter.ORGANIZO -> misPasados.filter { it.isOrganizer }
+                val visible = when (selectedFilter) {
+                    MatchFilter.TODOS -> realPastMatches
+                    MatchFilter.ME_SUME -> realPastMatches.filter { it.isUserJoined && !it.isOrganizer }
+                    MatchFilter.ORGANIZO -> realPastMatches.filter { it.isOrganizer }
                 }
-
-                if (visiblePastMatches.isEmpty()) {
-                    EmptyFilteredMatches(selectedFilter, colors)
-                } else {
-                    visiblePastMatches.forEach { match ->
-                        PastMatchCard(match, colors) { onMatchClick(match.id) }
-                        Spacer(modifier = Modifier.height(12.dp))
-                    }
-                }
+                if (visible.isEmpty()) EmptyFilteredMatches(selectedFilter, colors)
+                else visible.forEach { PastMatchCard(it, colors) { onMatchClick(it.id) }; Spacer(modifier = Modifier.height(12.dp)) }
             }
         }
     }
 }
+
+// [MANTENER MatchesHeader, MatchesTabs, Chips, UserMatchCard, PastMatchCard, LocationRow, DateBox, StatusChip, BottomBar y Helpers IGUAL QUE ANTES]
 @Composable
 private fun MatchesHeader(
     colors: MatchesColors,
@@ -353,6 +257,7 @@ private fun MatchesFilterChips(
     colors: MatchesColors,
     onFilterSelected: (MatchFilter) -> Unit
 ) {
+    Spacer(modifier = Modifier.height(12.dp))
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -465,7 +370,7 @@ private fun EmptyFilteredMatches(
     ) {
         Text(
             text = when (selectedFilter) {
-                MatchFilter.TODOS -> "Todavía no tenés partidos próximos."
+                MatchFilter.TODOS -> "Todavía no tenés partidos pasados."
                 MatchFilter.ME_SUME -> "Todavía no te sumaste a ningún partido."
                 MatchFilter.ORGANIZO -> "Todavía no organizaste ningún partido."
             },
@@ -624,7 +529,7 @@ private fun PastMatchCard(
                     modifier = Modifier.weight(1f)
                 )
 
-                FinishedStatusChip()
+                FinishedStatusChip(status = match.status)
             }
 
             Spacer(modifier = Modifier.height(4.dp))
@@ -772,32 +677,42 @@ private fun DateBox(
 @Composable
 private fun StatusChip(status: String) {
     val isConfirmed = status == "CONFIRMADO"
+    val isCancelled = status == "CANCELADO"
 
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = if (isConfirmed) Color(0xFFDDF8E6) else Color(0xFFFFE7D2)
+        color = when {
+            isConfirmed -> Color(0xFFDDF8E6)
+            isCancelled -> Color(0xFFFFD6D6)
+            else -> Color(0xFFFFE7D2)
+        }
     ) {
         Text(
             text = status,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            color = if (isConfirmed) Color(0xFF008A35) else Color(0xFFC85D00),
+            color = when {
+                isConfirmed -> Color(0xFF008A35)
+                isCancelled -> Color(0xFFC62828)
+                else -> Color(0xFFC85D00)
+            },
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
         )
     }
 }
 
 @Composable
-private fun FinishedStatusChip() {
+private fun FinishedStatusChip(status: String = "FINALIZADO") {
+    val isCancelled = status == "CANCELADO"
     Surface(
         shape = RoundedCornerShape(18.dp),
-        color = Color(0xFFE5E5E5)
+        color = if (isCancelled) Color(0xFFFFD6D6) else Color(0xFFE5E5E5)
     ) {
         Text(
-            text = "FINALIZADO",
+            text = status,
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFF7A7A7A),
+            color = if (isCancelled) Color(0xFFC62828) else Color(0xFF7A7A7A),
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
         )
     }

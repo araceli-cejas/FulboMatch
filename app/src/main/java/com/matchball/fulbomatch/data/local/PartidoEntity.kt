@@ -23,7 +23,10 @@ data class PartidoEntity(
     val nivel: String,
     val superficie: String,
     val descripcion: String,
-    val jugadoresConfirmados: List<String> // Acá guardamos los IDs
+    val jugadoresConfirmados: List<String>, // Acá guardamos los IDs
+    val status: String = "PENDIENTE",
+    val golesLocal: Int = 0,
+    val golesVisitante: Int = 0
 ) {
     // Función amiga para convertir desde esta entidad local al modelo de la app
     fun toPartido(): Partido = Partido(
@@ -38,7 +41,10 @@ data class PartidoEntity(
         nivel = nivel,
         superficie = superficie,
         descripcion = descripcion,
-        jugadoresConfirmados = jugadoresConfirmados
+        jugadoresConfirmados = jugadoresConfirmados,
+        status = status,
+        golesLocal = golesLocal,
+        golesVisitante = golesVisitante
     )
 }
 
@@ -69,5 +75,8 @@ fun Partido.toEntity(): PartidoEntity = PartidoEntity(
     nivel = nivel,
     superficie = superficie,
     descripcion = descripcion,
-    jugadoresConfirmados = jugadoresConfirmados
+    jugadoresConfirmados = jugadoresConfirmados,
+    status = status,
+    golesLocal = golesLocal,
+    golesVisitante = golesVisitante
 )

@@ -3,7 +3,7 @@ package com.matchball.fulbomatch.data.model
 data class Partido(
     val id: String = "",
     val titulo: String = "",
-    val creadorId: String = "", // Para saber quién es el organizador
+    val creadorId: String = "",
     val fecha: String = "",
     val hora: String = "",
     val lugar: String = "",
@@ -12,5 +12,8 @@ data class Partido(
     val nivel: String = "Medio",
     val superficie: String = "Sintético",
     val descripcion: String = "",
-    val jugadoresConfirmados: List<String> = emptyList() // Lista de IDs de los usuarios que se suman
+    val jugadoresConfirmados: List<String> = emptyList(),
+    val status: String = "PENDIENTE",
+    val golesLocal: Int = 0,
+    val golesVisitante: Int = 0
 )

@@ -67,7 +67,7 @@ private fun profileColors(isDarkMode: Boolean): ProfileColors {
         ProfileColors(
             background = Color(0xFFF6F6F6), cardBackground = Color.White, textPrimary = Color(0xFF202020),
             textSecondary = Color(0xFF444444), textMuted = Color(0xFF333333), headerIcon = GreenPrimary,
-            icon = Color(0xFF6A6F66), accent = GreenPrimary, accentText = Color(0xFFBDE8B9),
+            icon = Color(0xFF6A6F66), accent = GreenPrimary, accentText = Color.White,
             chipBackground = Color(0xFFEDEDED), avatarBackground = Color(0xFFEDEDED), circleIconBackground = Color(0xFFE4E4E4),
             divider = Color(0xFFE0E0E0), logoutBackground = Color(0xFFFFD6D6), logoutIconBackground = Color(0xFFFFEEEE),
             danger = Color(0xFFC62828), bottomBarBackground = Color(0xFFF3F1F1), bottomIcon = Color(0xFF4F574C),
@@ -178,7 +178,7 @@ fun ProfileScreen(
             }
 
             ProfileUserInfo(
-                userProfile?.posicion ?: "Sin posición",
+                userProfile?.posicion?.takeIf { it != "Completar" },
                 userProfile?.age ?: "--",
                 userProfile?.zone ?: "Sin zona",
                 colors = colors)
@@ -203,14 +203,17 @@ fun ProfileScreen(
 
 // --- RESTO DE COMPONENTES SIN ProfileAvatar (ya eliminado) ---
 @Composable
-private fun ProfileUserInfo(posicion: String, edad: String, zona: String, colors: ProfileColors) {
+private fun ProfileUserInfo(posicion: String?, edad: String, zona: String, colors: ProfileColors) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
         // POSICIÓN
-        Surface(shape = RoundedCornerShape(6.dp), color = colors.chipBackground) {
-            Text(posicion, fontSize = 13.sp, color = colors.textPrimary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+        if (posicion != null) {
+            Surface(shape = RoundedCornerShape(6.dp), color = colors.chipBackground) {
+                Text(posicion, fontSize = 13.sp, color = colors.textPrimary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+            }
+            Text(" • ", fontSize = 15.sp, color = colors.textSecondary)
         }
         // EDAD
-        Text(" • $edad años • ", fontSize = 15.sp, color = colors.textSecondary)
+        Text("$edad años • ", fontSize = 15.sp, color = colors.textSecondary)
         // ZONA
         Icon(Icons.Default.Place, "Ubicación", tint = colors.textSecondary, modifier = Modifier.size(17.dp))
         Text(zona, fontSize = 15.sp, color = colors.textSecondary)

@@ -510,7 +510,8 @@ fun EditMatchScreen(
                             precio = price,
                             nivel = level,
                             superficie = surface,
-                            descripcion = description
+                            descripcion = description,
+                            status = if ((players.toIntOrNull() ?: p.maxJugadores) <= p.jugadoresConfirmados.size) "LLENO" else "ABIERTO"
                         )
                         viewModel.actualizarPartido(actualizado)
                     }

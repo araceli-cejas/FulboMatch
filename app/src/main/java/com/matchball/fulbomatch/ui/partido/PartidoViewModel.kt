@@ -117,6 +117,17 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
             _uiState.value = PartidoUiState.Loading
             val result = partidoRepository.updatePartido(partidoActualizado)
             if (result.isSuccess) {
+                // Notificar a los jugadores que el partido cambió
+                partidoActualizado.jugadoresConfirmados.forEach { playerUid ->
+                    if (playerUid != partidoActualizado.creadorId) {
+                        sendNotification(
+                            userId = playerUid,
+                            title = "Partido actualizado",
+                            message = "El organizador actualizó los detalles de: ${partidoActualizado.titulo}.",
+                            type = "match_update"
+                        )
+                    }
+                }
                 _uiState.value = PartidoUiState.Success
             } else {
                 _uiState.value = PartidoUiState.Error("Error al actualizar el partido")
@@ -127,8 +138,20 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
     fun borrarPartido(partidoId: String) {
         viewModelScope.launch {
             _uiState.value = PartidoUiState.Loading
+            val partido = _partidos.value.find { it.id == partidoId }
             val result = partidoRepository.deletePartido(partidoId)
             if (result.isSuccess) {
+                // Notificar a los jugadores que el partido se canceló
+                partido?.jugadoresConfirmados?.forEach { playerUid ->
+                    if (playerUid != partido.creadorId) {
+                        sendNotification(
+                            userId = playerUid,
+                            title = "Partido cancelado",
+                            message = "Se ha cancelado el partido: ${partido.titulo}.",
+                            type = "match_cancelled"
+                        )
+                    }
+                }
                 _uiState.value = PartidoUiState.Success
             } else {
                 _uiState.value = PartidoUiState.Error("Error al cancelar el partido")
@@ -140,26 +163,22 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _uiState.value = PartidoUiState.Loading
             currentUserId?.let { uid ->
+                // Buscamos el partido ANTES de la operación para asegurar que lo tenemos
+                val partido = _partidos.value.find { it.id == partidoId }
+                
                 val result = partidoRepository.joinPartido(partidoId, uid)
                 if (result.isSuccess) {
-                    // --- INICIO LÓGICA DE NOTIFICACIONES ---
-                    // 1. Buscamos el partido actual en nuestra lista cargada
-                    val partido = _partidos.value.find { it.id == partidoId }
-
-                    // 2. Buscamos el nombre de este usuario en la base de datos
                     val userResult = userRepository.getUsersProfiles(listOf(uid))
-                    val playerName = userResult.getOrNull()?.firstOrNull()?.nombre ?: "Alguien"
+                    val playerName = userResult.getOrNull()?.firstOrNull()?.nombre ?: "Un jugador"
 
-                    // 3. Validamos que el partido exista y que el creador NO sea el mismo que se anota
                     if (partido != null && partido.creadorId != uid) {
-                        sendJoinNotification(
-                            organizerId = partido.creadorId,
-                            matchTitle = partido.titulo,
-                            playerName = playerName
+                        sendNotification(
+                            userId = partido.creadorId,
+                            title = "Nuevo jugador anotado",
+                            message = "$playerName se sumó a tu partido: ${partido.titulo}.",
+                            type = "new_player"
                         )
                     }
-                    // --- FIN LÓGICA DE NOTIFICACIONES ---
-
                     _uiState.value = PartidoUiState.Success
                 } else {
                     _uiState.value = PartidoUiState.Error("Error al sumarse al partido")
@@ -172,12 +191,58 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
         viewModelScope.launch {
             _uiState.value = PartidoUiState.Loading
             currentUserId?.let { uid ->
+                // Buscamos el partido ANTES de la operación
+                val partido = _partidos.value.find { it.id == partidoId }
+                
                 val result = partidoRepository.leavePartido(partidoId, uid)
                 if (result.isSuccess) {
+                    val userResult = userRepository.getUsersProfiles(listOf(uid))
+                    val playerName = userResult.getOrNull()?.firstOrNull()?.nombre ?: "Un jugador"
+
+                    if (partido != null && partido.creadorId != uid) {
+                        sendNotification(
+                            userId = partido.creadorId,
+                            title = "Jugador se bajó",
+                            message = "$playerName se bajó de tu partido: ${partido.titulo}.",
+                            type = "player_left"
+                        )
+                    }
                     _uiState.value = PartidoUiState.Success
                 } else {
                     _uiState.value = PartidoUiState.Error("Error al bajarse del partido")
                 }
+            }
+        }
+    }
+
+    fun finalizarPartido(partidoId: String) {
+        viewModelScope.launch {
+            _uiState.value = PartidoUiState.Loading
+            val partido = _partidos.value.find { it.id == partidoId }
+            
+            // Ponemos un resultado de prueba realista (ej 3-2 como en la imagen)
+            val partidoFinalizado = partido?.copy(
+                status = "FINALIZADO",
+                golesLocal = 3,
+                golesVisitante = 2
+            ) ?: return@launch
+
+            val result = partidoRepository.updatePartido(partidoFinalizado)
+            if (result.isSuccess) {
+                // Notificar a todos que terminó
+                partidoFinalizado.jugadoresConfirmados.forEach { playerUid ->
+                    if (playerUid != partidoFinalizado.creadorId) {
+                        sendNotification(
+                            userId = playerUid,
+                            title = "Partido finalizado",
+                            message = "El partido ${partidoFinalizado.titulo} ha finalizado. ¡Mirá las estadísticas!",
+                            type = "match_finished"
+                        )
+                    }
+                }
+                _uiState.value = PartidoUiState.Success
+            } else {
+                _uiState.value = PartidoUiState.Error("Error al finalizar el partido")
             }
         }
     }
@@ -196,19 +261,35 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    // --- FUNCIÓN DE FIREBASE NOTIFICATIONS ---
-    private fun sendJoinNotification(organizerId: String, matchTitle: String, playerName: String) {
+    private fun sendNotification(userId: String, title: String, message: String, type: String) {
         val db = FirebaseFirestore.getInstance()
-
         val notificationData = hashMapOf(
-            "userId" to organizerId,
-            "title" to "Nuevo jugador anotado",
-            "message" to "$playerName se sumó a tu partido: $matchTitle.",
-            "type" to "new_player",
+            "userId" to userId,
+            "title" to title,
+            "message" to message,
+            "type" to type,
             "isRead" to false,
             "timestamp" to Timestamp.now()
         )
-
         db.collection("notifications").add(notificationData)
+    }
+
+    // 1. Variable para el partido que estás editando actualmente
+    private val _partidoEnEdicion = MutableStateFlow<Partido?>(null)
+    val partidoEnEdicion: StateFlow<Partido?> = _partidoEnEdicion.asStateFlow()
+
+    // 2. Función para "cargar" el partido al entrar a la pantalla de edición
+    fun setPartidoAEditar(partido: Partido) {
+        _partidoEnEdicion.value = partido
+    }
+
+    // 3. Modifica la función de creación/edición para ser inteligente
+    fun guardarCambios(partido: Partido) {
+        // Si tiene ID, es editar, sino es crear
+        if (partido.id.isNotEmpty()) {
+            actualizarPartido(partido)
+        } else {
+            // llamar a crearPartido normal
+        }
     }
 }

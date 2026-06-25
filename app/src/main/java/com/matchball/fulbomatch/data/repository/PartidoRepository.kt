@@ -76,6 +76,17 @@ class PartidoRepository(context: Context) {
         }
     }
 
+    // Finalizar partido
+    suspend fun finishPartido(partidoId: String): Result<Unit> {
+        return try {
+            partidosCollection.document(partidoId).update("status", "FINALIZADO").await()
+            refreshPartidos()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     // Sumarse a partido
     suspend fun joinPartido(partidoId: String, userId: String): Result<Unit> {
         return try {
