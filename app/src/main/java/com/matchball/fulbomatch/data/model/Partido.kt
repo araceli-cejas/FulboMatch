@@ -15,5 +15,8 @@ data class Partido(
     val jugadoresConfirmados: List<String> = emptyList(),
     val status: String = "PENDIENTE",
     val golesLocal: Int = 0,
-    val golesVisitante: Int = 0
+    val golesVisitante: Int = 0,
+    val duracion: Int = 0,
+    val tarjetasAmarillas: Int = 0,
+    val tarjetasRojas: Int = 0
 )

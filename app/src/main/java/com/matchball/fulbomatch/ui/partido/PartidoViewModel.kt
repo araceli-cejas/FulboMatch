@@ -215,16 +215,25 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
         }
     }
 
-    fun finalizarPartido(partidoId: String) {
+    fun finalizarPartido(
+        partidoId: String,
+        golesLocal: Int,
+        golesVisitante: Int,
+        duracion: Int,
+        tarjetasAmarillas: Int,
+        tarjetasRojas: Int
+    ) {
         viewModelScope.launch {
             _uiState.value = PartidoUiState.Loading
             val partido = _partidos.value.find { it.id == partidoId }
-            
-            // Ponemos un resultado de prueba realista (ej 3-2 como en la imagen)
+
             val partidoFinalizado = partido?.copy(
                 status = "FINALIZADO",
-                golesLocal = 3,
-                golesVisitante = 2
+                golesLocal = golesLocal,
+                golesVisitante = golesVisitante,
+                duracion = duracion,
+                tarjetasAmarillas = tarjetasAmarillas,
+                tarjetasRojas = tarjetasRojas
             ) ?: return@launch
 
             val result = partidoRepository.updatePartido(partidoFinalizado)

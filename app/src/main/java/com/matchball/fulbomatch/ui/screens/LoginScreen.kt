@@ -74,7 +74,7 @@ fun LoginScreen(
 
             // IMAGEN Ilustrativa
             Image(
-                painter = painterResource(id = R.drawable.cancha), // O una de futbolistas
+                painter = painterResource(id = R.drawable.fondo), // O una de futbolistas
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()

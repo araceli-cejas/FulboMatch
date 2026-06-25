@@ -80,11 +80,35 @@ fun EditProfileScreen(
     val locationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
         if (isGranted && ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             LocationServices.getFusedLocationProviderClient(context).lastLocation.addOnSuccessListener { loc ->
-                loc?.let { zone = "${it.latitude.toString().take(6)}, ${it.longitude.toString().take(6)}" }
+                loc?.let {
+                    try {
+                        val geocoder = android.location.Geocoder(context, java.util.Locale.getDefault())
+                        @Suppress("DEPRECATION")
+                        val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+                        if (!addresses.isNullOrEmpty()) {
+                            val address = addresses[0]
+                            zone = when {
+                                // Si tiene barrio/sublocality, usá eso
+                                !address.subLocality.isNullOrBlank() -> address.subLocality
+                                // Si no, usá la localidad (ciudad/municipio)
+                                !address.locality.isNullOrBlank() -> address.locality
+                                // Si no, usá la calle y número
+                                !address.thoroughfare.isNullOrBlank() -> {
+                                    val numero = address.subThoroughfare ?: ""
+                                    "${address.thoroughfare} $numero".trim()
+                                }
+                                // Fallback: las coordenadas como antes
+                                else -> "${it.latitude.toString().take(7)}, ${it.longitude.toString().take(7)}"
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Si Geocoder falla (sin internet), muestra coordenadas
+                        zone = "${it.latitude.toString().take(7)}, ${it.longitude.toString().take(7)}"
+                    }
+                }
             }
         }
     }
-
     val textFieldColors = OutlinedTextFieldDefaults.colors(
         focusedTextColor = colors.textPrimary,
         unfocusedTextColor = colors.textPrimary,

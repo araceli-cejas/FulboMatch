@@ -84,6 +84,12 @@ fun MatchDetailScreen(
     val uiState by viewModel.uiState.collectAsState()
     var pendingAction by remember { mutableStateOf<String?>(null) }
     val colors = matchDetailColors(isDarkMode)
+    var showFinishDialog by remember { mutableStateOf(false) }
+    var golesLocalInput by remember { mutableStateOf("") }
+    var golesVisitanteInput by remember { mutableStateOf("") }
+    var duracionInput by remember { mutableStateOf("") }
+    var amarillasInput by remember { mutableStateOf("") }
+    var rojasInput by remember { mutableStateOf("") }
 
     LaunchedEffect(partido?.jugadoresConfirmados) {
         partido?.jugadoresConfirmados?.let { viewModel.cargarJugadoresConfirmados(it) }
@@ -97,7 +103,141 @@ fun MatchDetailScreen(
             pendingAction = null
         }
     }
+    if (showFinishDialog) {
+        AlertDialog(
+            onDismissRequest = { showFinishDialog = false },
+            title = {
+                Text(
+                    "Cargar resultado",
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDarkMode) Color(0xFFEDEDED) else Color(0xFF003311)
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Completá los datos del partido finalizado.",
+                        color = if (isDarkMode) Color(0xFFBDBDBD) else Color(0xFF4F574C)
+                    )
+                    Spacer(Modifier.height(2.dp))
 
+                    // Fila: Goles A y Goles B
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = golesLocalInput,
+                            onValueChange = {
+                                if (it.length <= 2 && it.all { c -> c.isDigit() })
+                                    golesLocalInput = it
+                            },
+                            label = { Text("Goles A") },
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = golesVisitanteInput,
+                            onValueChange = {
+                                if (it.length <= 2 && it.all { c -> c.isDigit() })
+                                    golesVisitanteInput = it
+                            },
+                            label = { Text("Goles B") },
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    // Duración
+                    OutlinedTextField(
+                        value = duracionInput,
+                        onValueChange = {
+                            if (it.length <= 3 && it.all { c -> c.isDigit() })
+                                duracionInput = it
+                        },
+                        label = { Text("Duración (minutos)") },
+                        placeholder = { Text("Ej: 60") },
+                        singleLine = true,
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Fila: Tarjetas
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = amarillasInput,
+                            onValueChange = {
+                                if (it.length <= 2 && it.all { c -> c.isDigit() })
+                                    amarillasInput = it
+                            },
+                            label = { Text("🟡 Amarillas") },
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = rojasInput,
+                            onValueChange = {
+                                if (it.length <= 2 && it.all { c -> c.isDigit() })
+                                    rojasInput = it
+                            },
+                            label = { Text("🔴 Rojas") },
+                            singleLine = true,
+                            keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                                keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                            ),
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val local = golesLocalInput.toIntOrNull() ?: 0
+                        val visitante = golesVisitanteInput.toIntOrNull() ?: 0
+                        val dur = duracionInput.toIntOrNull() ?: 0
+                        val amarillas = amarillasInput.toIntOrNull() ?: 0
+                        val rojas = rojasInput.toIntOrNull() ?: 0
+                        showFinishDialog = false
+                        pendingAction = "FINISH"
+                        viewModel.finalizarPartido(
+                            matchId, local, visitante, dur, amarillas, rojas
+                        )
+                    },
+                    enabled = golesLocalInput.isNotEmpty()
+                            && golesVisitanteInput.isNotEmpty()
+                            && duracionInput.isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(containerColor = GreenPrimary)
+                ) {
+                    Text("Confirmar", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showFinishDialog = false
+                }) {
+                    Text(
+                        "Cancelar",
+                        color = if (isDarkMode) Color(0xFF9EF49B) else GreenPrimary
+                    )
+                }
+            }
+        )
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -120,7 +260,11 @@ fun MatchDetailScreen(
                     onJoinClick = { pendingAction = "JOIN"; viewModel.sumarseAPartido(matchId) },
                     onLeaveClick = { pendingAction = "LEAVE"; viewModel.bajarseDePartido(matchId) },
                     onEditClick = { onEditMatchClick(matchId) },
-                    onFinishClick = { pendingAction = "FINISH"; viewModel.finalizarPartido(matchId) },
+                    onFinishClick = {
+                        golesLocalInput = ""
+                        golesVisitanteInput = ""
+                        showFinishDialog = true
+                    },
                     onStatsClick = { onStatisticsClick(matchId) }
                 )
             }

@@ -63,6 +63,13 @@ import com.matchball.fulbomatch.ui.components.MoonIconButton
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 import com.matchball.fulbomatch.ui.theme.White
 import com.matchball.fulbomatch.ui.partido.PartidoUiState
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
+import com.google.android.gms.location.LocationServices
 
 private data class EditMatchColors(
     val background: Color,
@@ -166,6 +173,48 @@ fun EditMatchScreen(
     var players by remember { mutableStateOf("") }
     var level by remember { mutableStateOf("Medio") }
 
+    val context = LocalContext.current
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted && ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            LocationServices.getFusedLocationProviderClient(context)
+                .lastLocation.addOnSuccessListener { loc ->
+                    loc?.let {
+                        try {
+                            val geocoder = android.location.Geocoder(
+                                context, java.util.Locale.getDefault()
+                            )
+                            @Suppress("DEPRECATION")
+                            val addresses = geocoder.getFromLocation(
+                                it.latitude, it.longitude, 1
+                            )
+                            if (!addresses.isNullOrEmpty()) {
+                                val address = addresses[0]
+                                location = when {
+                                    !address.subLocality.isNullOrBlank() ->
+                                        address.subLocality
+                                    !address.locality.isNullOrBlank() ->
+                                        address.locality
+                                    !address.thoroughfare.isNullOrBlank() -> {
+                                        val numero = address.subThoroughfare ?: ""
+                                        "${address.thoroughfare} $numero".trim()
+                                    }
+                                    else ->
+                                        "${it.latitude.toString().take(7)}, ${it.longitude.toString().take(7)}"
+                                }
+                            }
+                        } catch (e: Exception) {
+                            location = "${it.latitude.toString().take(7)}, ${it.longitude.toString().take(7)}"
+                        }
+                    }
+                }
+        }
+    }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
     var surface by remember { mutableStateOf("Sintético") }
@@ -345,7 +394,7 @@ fun EditMatchScreen(
             EditMockLocationButton(
                 colors = colors,
                 onClick = {
-                    location = "Cerca de Caballito, CABA"
+                    locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
                 }
             )
 

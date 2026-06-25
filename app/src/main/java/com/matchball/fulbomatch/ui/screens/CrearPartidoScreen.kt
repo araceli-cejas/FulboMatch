@@ -216,6 +216,7 @@ fun CrearPartidoScreen(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let {
                         val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                        sdf.timeZone = java.util.TimeZone.getTimeZone("UTC")
                         fecha = sdf.format(Date(it))
                     }
                     showDatePicker = false

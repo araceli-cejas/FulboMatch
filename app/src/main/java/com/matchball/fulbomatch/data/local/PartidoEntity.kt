@@ -8,11 +8,10 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.matchball.fulbomatch.data.model.Partido
 
-// 1. Declaramos que esta clase es una tabla en la base de datos local
 @Entity(tableName = "partidos_table")
-@TypeConverters(StringListConverter::class) // Le decimos cómo guardar las listas
+@TypeConverters(StringListConverter::class)
 data class PartidoEntity(
-    @PrimaryKey val id: String, // La clave principal (usamos el mismo ID de Firebase)
+    @PrimaryKey val id: String,
     val titulo: String,
     val creadorId: String,
     val fecha: String,
@@ -23,12 +22,14 @@ data class PartidoEntity(
     val nivel: String,
     val superficie: String,
     val descripcion: String,
-    val jugadoresConfirmados: List<String>, // Acá guardamos los IDs
+    val jugadoresConfirmados: List<String>,
     val status: String = "PENDIENTE",
     val golesLocal: Int = 0,
-    val golesVisitante: Int = 0
+    val golesVisitante: Int = 0,
+    val duracion: Int = 0,           // ← NUEVO
+    val tarjetasAmarillas: Int = 0,  // ← NUEVO
+    val tarjetasRojas: Int = 0       // ← NUEVO
 ) {
-    // Función amiga para convertir desde esta entidad local al modelo de la app
     fun toPartido(): Partido = Partido(
         id = id,
         titulo = titulo,
@@ -44,11 +45,13 @@ data class PartidoEntity(
         jugadoresConfirmados = jugadoresConfirmados,
         status = status,
         golesLocal = golesLocal,
-        golesVisitante = golesVisitante
+        golesVisitante = golesVisitante,
+        duracion = duracion,           // ← NUEVO
+        tarjetasAmarillas = tarjetasAmarillas, // ← NUEVO
+        tarjetasRojas = tarjetasRojas  // ← NUEVO
     )
 }
 
-// Esto convierte una lista de Strings a un JSON gigante y viceversa
 class StringListConverter {
     @TypeConverter
     fun fromStringList(value: List<String>?): String {
@@ -62,7 +65,6 @@ class StringListConverter {
     }
 }
 
-// 3. Función amiga (Extensión) para convertir el modelo de Firebase a Entidad Local
 fun Partido.toEntity(): PartidoEntity = PartidoEntity(
     id = id,
     titulo = titulo,
@@ -78,5 +80,8 @@ fun Partido.toEntity(): PartidoEntity = PartidoEntity(
     jugadoresConfirmados = jugadoresConfirmados,
     status = status,
     golesLocal = golesLocal,
-    golesVisitante = golesVisitante
+    golesVisitante = golesVisitante,
+    duracion = duracion,           // ← NUEVO
+    tarjetasAmarillas = tarjetasAmarillas, // ← NUEVO
+    tarjetasRojas = tarjetasRojas  // ← NUEVO
 )

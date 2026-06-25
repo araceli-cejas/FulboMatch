@@ -109,12 +109,27 @@ fun StatisticsScreen(
                 Spacer(Modifier.height(14.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     MetricCard(Modifier.weight(1f), colors, { Text("⚽", fontSize = 24.sp) }, detail.totalGoals.toString(), "Goles Totales")
-                    MetricCard(Modifier.weight(1f), colors, { Icon(Icons.Default.AccessTime, null, tint = colors.icon) }, "60 min", "Duración")
+                    MetricCard(
+                        Modifier.weight(1f), colors,
+                        { Icon(Icons.Default.AccessTime, null, tint = colors.icon) },
+                        "${detail.statistics.duration} min",
+                        "Duración"
+                    )
                 }
                 Spacer(Modifier.height(14.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    MetricCard(Modifier.weight(1f), colors, { Box(Modifier.size(20.dp, 28.dp).background(Color(0xFFE0A800), RoundedCornerShape(2.dp))) }, "2", "Tarjetas Amarillas")
-                    MetricCard(Modifier.weight(1f), colors, { Box(Modifier.size(20.dp, 28.dp).background(Color(0xFFFF4D4D), RoundedCornerShape(2.dp))) }, "0", "Tarjetas Rojas")
+                    MetricCard(
+                        Modifier.weight(1f), colors,
+                        { Box(Modifier.size(20.dp, 28.dp).background(Color(0xFFE0A800), RoundedCornerShape(2.dp))) },
+                        detail.statistics.yellowCards.toString(),
+                        "Tarjetas Amarillas"
+                    )
+                    MetricCard(
+                        Modifier.weight(1f), colors,
+                        { Box(Modifier.size(20.dp, 28.dp).background(Color(0xFFFF4D4D), RoundedCornerShape(2.dp))) },
+                        detail.statistics.redCards.toString(),
+                        "Tarjetas Rojas"
+                    )
                 }
                 Spacer(Modifier.height(34.dp))
 
@@ -207,12 +222,28 @@ private fun BottomItem(icon: Any, label: String, selected: Boolean, colors: Stat
 }
 
 private fun Partido.toFinishedDetail(players: List<UserProfile>): FinishedMatchDetail {
-    val scorers = players.take(2).mapIndexed { i, p -> FinishedMatchScorer(p.nombre, if (i == 0) "Equipo A" else "Equipo B", if (i == 0) 3 else 2) }
+    val scorers = players.take(2).mapIndexed { i, p ->
+        FinishedMatchScorer(
+            p.nombre,
+            if (i == 0) "Equipo A" else "Equipo B",
+            if (i == 0) golesLocal else golesVisitante
+        )
+    }
     return FinishedMatchDetail(
         id = id, title = titulo, location = lugar, date = fecha, time = hora,
-        resultHome = golesLocal.toString(), resultAway = golesVisitante.toString(),
+        resultHome = golesLocal.toString(),
+        resultAway = golesVisitante.toString(),
         organizerName = "Organizador", rating = "5.0", ratingDescription = "(1 partido)",
-        surface = superficie, level = nivel, players = "${jugadoresConfirmados.size}/$maxJugadores",
-        statistics = FinishedMatchStatistics("${fecha}, $hora - $lugar", "Equipo A", "Equipo B", 60, 2, 0, scorers)
+        surface = superficie, level = nivel,
+        players = "${jugadoresConfirmados.size}/$maxJugadores",
+        statistics = FinishedMatchStatistics(
+            dateTimeAndPlace = "${fecha}, $hora - $lugar",
+            teamAName = "Equipo A",
+            teamBName = "Equipo B",
+            duration = duracion,           // ← del modelo real
+            yellowCards = tarjetasAmarillas, // ← del modelo real
+            redCards = tarjetasRojas,        // ← del modelo real
+            scorers = scorers
+        )
     )
 }
