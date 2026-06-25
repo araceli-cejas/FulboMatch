@@ -179,6 +179,10 @@ fun EditMatchScreen(
             time = it.hora
             location = it.lugar
             players = it.maxJugadores.toString()
+            price = it.precio ?: "1500"
+            surface = it.superficie ?: "Sintético"
+            level = it.nivel ?: "Medio"
+            description = it.descripcion ?: ""
         }
     }
 

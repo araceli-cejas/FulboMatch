@@ -163,21 +163,19 @@ fun MatchesScreen(
     val colors = matchesColors(isDarkMode)
 
     val partidosFirebase by viewModel.partidos.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
     val currentUserId = viewModel.currentUserId
 
     LaunchedEffect(Unit) {
         viewModel.loadPartidos()
     }
 
-    val misPartidosFirebase = partidosFirebase.filter { partido ->
-        partido.creadorId == currentUserId || partido.jugadoresConfirmados.contains(currentUserId)
+    // FILTRO DINÁMICO: Solo partidos donde el usuario es creador o participante
+    val misPartidos = partidosFirebase.filter { p ->
+        p.creadorId == currentUserId || p.jugadoresConfirmados.contains(currentUserId)
     }
 
-    val realUserMatches = misPartidosFirebase.map { p ->
+    val realUserMatches = misPartidos.map { p ->
         val fechaParts = p.fecha.split("/")
-        val isOrganizer = p.creadorId == currentUserId
-
         UserMatch(
             id = p.id,
             title = p.titulo,
@@ -188,18 +186,17 @@ fun MatchesScreen(
             players = "${p.jugadoresConfirmados.size}/${p.maxJugadores} jugadores",
             status = if (p.jugadoresConfirmados.size >= p.maxJugadores) "CONFIRMADO" else "PENDIENTE",
             isUserJoined = p.jugadoresConfirmados.contains(currentUserId),
-            isOrganizer = isOrganizer
+            isOrganizer = p.creadorId == currentUserId
         )
     }
 
+    // FILTRO PARA PASADOS: Igual al anterior, aquí deberías filtrar tu lista de pastMatches
+    // o compararlos contra la base de datos real
+    val misPasados = pastMatches.filter { it.isUserJoined || it.isOrganizer }
+
     Scaffold(
         bottomBar = {
-            MatchesBottomBar(
-                colors = colors,
-                onHomeClick = onHomeClick,
-                onCreateMatchClick = onCreateMatchClick,
-                onProfileClick = onProfileClick
-            )
+            MatchesBottomBar(colors, onHomeClick, onCreateMatchClick, onProfileClick)
         },
         containerColor = colors.background
     ) { padding ->
@@ -210,20 +207,16 @@ fun MatchesScreen(
                 .background(colors.background)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 22.dp, vertical = 12.dp)
-                .semantics { contentDescription = "Pantalla de partidos" }
         ) {
             MatchesHeader(colors, isDarkMode, onToggleDarkMode, onRequestsClick)
             Spacer(modifier = Modifier.height(18.dp))
             Text("Partidos", fontSize = 26.sp, fontWeight = FontWeight.Bold, color = colors.textPrimary)
-            Spacer(modifier = Modifier.height(22.dp))
+
             MatchesTabs(selectedTab, colors) { selectedTab = it }
-            Spacer(modifier = Modifier.height(16.dp))
             MatchesFilterChips(selectedFilter, colors) { selectedFilter = it }
-            Spacer(modifier = Modifier.height(20.dp))
 
             if (!isOnline && realUserMatches.isNotEmpty()) {
                 OfflineWarningBanner()
-                Spacer(modifier = Modifier.height(16.dp))
             }
 
             if (selectedTab == "Próximos") {
@@ -242,20 +235,25 @@ fun MatchesScreen(
                     }
                 }
             } else {
+                // AQUÍ APLICAMOS EL FILTRO A LOS PASADOS
                 val visiblePastMatches = when (selectedFilter) {
-                    MatchFilter.TODOS -> pastMatches
-                    MatchFilter.ME_SUME -> pastMatches.filter { it.isUserJoined }
-                    MatchFilter.ORGANIZO -> pastMatches.filter { it.isOrganizer }
+                    MatchFilter.TODOS -> misPasados
+                    MatchFilter.ME_SUME -> misPasados.filter { it.isUserJoined }
+                    MatchFilter.ORGANIZO -> misPasados.filter { it.isOrganizer }
                 }
-                visiblePastMatches.forEach { match ->
-                    PastMatchCard(match, colors) { onMatchClick(match.id) }
-                    Spacer(modifier = Modifier.height(12.dp))
+
+                if (visiblePastMatches.isEmpty()) {
+                    EmptyFilteredMatches(selectedFilter, colors)
+                } else {
+                    visiblePastMatches.forEach { match ->
+                        PastMatchCard(match, colors) { onMatchClick(match.id) }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
             }
         }
     }
 }
-
 @Composable
 private fun MatchesHeader(
     colors: MatchesColors,

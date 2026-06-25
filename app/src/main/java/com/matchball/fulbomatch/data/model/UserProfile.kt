@@ -10,5 +10,8 @@ data class UserProfile(
     val age: String = "",
     val zone: String = "",
     val description: String = "",
-    val photoBase64: String = ""
+    val photoBase64: String = "",
+    val totalPartidos: Int = 0,
+    val partidosCreados: Int = 0,
+    val partidosAnotados: Int = 0
 )

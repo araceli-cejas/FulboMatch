@@ -40,6 +40,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.location.LocationServices
 import com.matchball.fulbomatch.R
 import com.matchball.fulbomatch.ui.components.MoonIconButton
+import com.matchball.fulbomatch.ui.partido.PartidoViewModel
 import com.matchball.fulbomatch.ui.theme.GreenPrimary
 
 // --- CLASES DE ESTILO ---
@@ -87,12 +88,20 @@ fun ProfileScreen(
     onDeleteAccountClick: () -> Unit = {},
     isDarkMode: Boolean = false,
     onToggleDarkMode: () -> Unit = {},
-    viewModel: com.matchball.fulbomatch.ui.profile.UserViewModel = viewModel()
+    viewModel: com.matchball.fulbomatch.ui.profile.UserViewModel = viewModel() ,
+    partidoViewModel: PartidoViewModel = viewModel()
 ) {
     val colors = profileColors(isDarkMode)
     val userProfile by viewModel.userProfile.collectAsState()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+
+    val todosLosPartidos by partidoViewModel.partidos.collectAsState() // <--- USÁ ESTE
+    val currentUserId = partidoViewModel.currentUserId
+
+    val creadosCount = todosLosPartidos.count { it.creadorId == currentUserId }
+    val anotadosCount = todosLosPartidos.count { it.jugadoresConfirmados.contains(currentUserId) && it.creadorId != currentUserId }
+    val totalCount = creadosCount + anotadosCount
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -110,6 +119,8 @@ fun ProfileScreen(
             }
         }
     }
+
+
 
     Scaffold(
         bottomBar = { ProfileBottomBar(colors, onHomeClick, onMatchesClick, onCreateMatchClick) },
@@ -172,7 +183,13 @@ fun ProfileScreen(
                 userProfile?.zone ?: "Sin zona",
                 colors = colors)
             Spacer(modifier = Modifier.height(30.dp))
-            ProfileStatsRow(colors)
+            ProfileStatsRow(
+                partidos = totalCount,
+                creados = creadosCount,
+                anotados = anotadosCount,
+                colors = colors
+            )
+
             Spacer(modifier = Modifier.height(28.dp))
 
             ProfileOptionCard(Icons.Default.Person, "Editar perfil", colors, onEditProfileClick)
@@ -212,11 +229,16 @@ private fun ProfileHeader(colors: ProfileColors, isDarkMode: Boolean, onToggleDa
 }
 
 @Composable
-private fun ProfileStatsRow(colors: ProfileColors) {
+private fun ProfileStatsRow(
+    partidos: Int,
+    creados: Int,
+    anotados: Int,
+    colors: ProfileColors
+) {
     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        ProfileStatCard("12", "PARTIDOS", colors, Modifier.weight(1f))
-        ProfileStatCard("5", "CREADOS", colors, Modifier.weight(1f))
-        ProfileStatCard("7", "ANOTADOS", colors, Modifier.weight(1f))
+        ProfileStatCard(partidos.toString(), "PARTIDOS", colors, Modifier.weight(1f))
+        ProfileStatCard(creados.toString(), "CREADOS", colors, Modifier.weight(1f))
+        ProfileStatCard(anotados.toString(), "ANOTADOS", colors, Modifier.weight(1f))
     }
 }
 
@@ -261,7 +283,10 @@ private fun CircleIconContainer(colors: ProfileColors, content: @Composable BoxS
 
 @Composable
 private fun LogoutButton(colors: ProfileColors, onClick: () -> Unit) {
-    Surface(modifier = Modifier.fillMaxWidth().height(66.dp).clickable { onClick() }, shape = RoundedCornerShape(12.dp), color = colors.logoutBackground) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().height(66.dp).clickable { onClick() },
+        shape = RoundedCornerShape(12.dp),
+        color = colors.cardBackground) {
         Row(Modifier.fillMaxSize().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(42.dp).clip(CircleShape).background(colors.logoutIconBackground), contentAlignment = Alignment.Center) {
                 Icon(Icons.AutoMirrored.Filled.ExitToApp, "Logout", tint = colors.danger, modifier = Modifier.size(22.dp))

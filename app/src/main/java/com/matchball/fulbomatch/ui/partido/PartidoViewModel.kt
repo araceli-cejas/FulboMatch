@@ -11,8 +11,11 @@ import com.matchball.fulbomatch.data.repository.AuthRepository
 import com.matchball.fulbomatch.data.repository.PartidoRepository
 import com.matchball.fulbomatch.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -40,6 +43,10 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
 
     val currentUserId: String? get() = authRepository.currentUser?.uid
 
+    val misPartidos = partidos.value.filter { it.creadorId == currentUserId }
+    val creadosCount = misPartidos.size
+    val sumadoCount = partidos.value.filter { it.jugadoresConfirmados.contains(currentUserId) }.size
+
     init {
         viewModelScope.launch {
             partidoRepository.partidosLocalFlow.collect { listaPartidos ->
@@ -48,6 +55,13 @@ class PartidoViewModel(application: Application) : AndroidViewModel(application)
         }
         loadPartidos()
     }
+
+    val partidosUsuario = _partidos.map { lista ->
+        val uid = currentUserId ?: ""
+        lista.filter { partido ->
+            partido.creadorId == uid || partido.jugadoresConfirmados.contains(uid)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun loadPartidos() {
         viewModelScope.launch {
