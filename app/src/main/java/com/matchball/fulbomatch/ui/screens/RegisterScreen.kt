@@ -213,7 +213,7 @@ fun RegisterScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it; localError = null }, // Limpiar error al tipear
-                    placeholder = { Text("Mínimo 8 caracteres") },
+                    placeholder = { Text("Mínimo 6 caracteres") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .semantics { contentDescription = "Campo de contraseña" },
